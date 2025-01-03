@@ -1,8 +1,19 @@
-# Use a lightweight Node.js image
-FROM node:latest
+# Use the official NVIDIA CUDA base image
+FROM nvidia/cuda:12.6.2-devel-ubuntu22.04
 
-# Install Python and pip
-RUN apt-get update && apt-get install -y python3 python3-pip python3-venv
+CMD ["nvidia-smi"]
+
+# Install the latest version of Node.js
+RUN apt-get update && apt-get install -y curl && \
+    curl -sL https://deb.nodesource.com/setup_current.x | bash - && \
+    apt-get install -y nodejs
+
+# Install the latest version of Python and pip
+RUN apt-get update && apt-get install -y python3 python3-pip python3-venv && \
+    ln -s /usr/bin/python3 /usr/bin/python
+
+# Install dependencies for OpenCV
+RUN apt-get update && apt-get install -y libgl1 libglib2.0-0 libsm6 libxrender1 libxext6
 
 # Set the working directory
 WORKDIR /app
@@ -28,4 +39,4 @@ COPY . .
 EXPOSE 3000
 
 # Run the application
-CMD ["npm", "start"]
+CMD ["/bin/bash", "-c", "source /app/venv/bin/activate && npm start"]

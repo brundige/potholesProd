@@ -4,13 +4,13 @@ import path from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import { fileURLToPath } from 'url';
-//import CameraRouter from './routes/CameraRouter.js';
+import CameraRouter from './routes/CameraRouter.js';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import http from 'http';
 import mongoose from 'mongoose';
-//import DashboardRouter from './routes/DashboardRouter.js';
-//import './Modules/DatabaseModule/MongoDBinterface.js';
+import DashboardRouter from './routes/DashboardRouter.js';
+import './Modules/DatabaseModule/MongoDBinterface.js';
 
 dotenv.config();
 
@@ -21,6 +21,8 @@ const app = express();
 const server = http.createServer(app);
 const port = 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/test';
+
+console.log('MONGO_URI:', MONGO_URI); // Verify MONGO_URI
 
 // Connect to MongoDB
 mongoose.connect(MONGO_URI)
@@ -40,8 +42,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
 
 // Routes
-//app.use('/camera', CameraRouter);
-//app.use('/api', DashboardRouter);
+app.use('/camera', CameraRouter);
+app.use('/api', DashboardRouter);
 app.get('/', (req, res) => res.render('index', { title: 'Express' }));
 
 // Error handling
@@ -55,7 +57,6 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.render('error');
 });
-
 
 // Start the server
 app.listen(port, () => {

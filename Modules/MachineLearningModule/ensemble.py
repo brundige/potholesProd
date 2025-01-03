@@ -2,19 +2,20 @@ import os
 import argparse
 from ultralytics import YOLO
 import yaml
+import torch
 
 # Load Base Model
 base_model = YOLO('Modules/MachineLearningModule/models/11n_eleven_thirteen_150epochs.pt', task='detect')
 # Load Manhole Model
-manhole_model = YOLO('Modules/MachineLearningModule/base_transfer_manhole.pt', task='detect')
+manhole_model = YOLO('Modules/MachineLearningModule/models/base_transfer_manhole.pt', task='detect')
 # Load the best hyperparameters from the YAML file
-with open(
-        "C:/Users/chrisb/chattanooga_test/potholes_machine_learning/model_builder/runs/detect/tune/best_hyperparameters.yaml",
-        'r') as file:
+with open("Modules/MachineLearningModule/models/best_hyperparameters.yaml", 'r') as file:
     best_hyperparameters = yaml.load(file, Loader=yaml.FullLoader)
 
+# Determine the device to use
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
-def run_model(model, source_images, classes, project, output_dir, hp=best_hyperparameters,):
+def run_model(model, source_images, classes, project, output_dir, hp=best_hyperparameters):
     # Set the hyperparameters directly in the model's configuration
     model.overrides.update(hp)
 
@@ -31,13 +32,11 @@ def run_model(model, source_images, classes, project, output_dir, hp=best_hyperp
         save_txt=True,
         save_conf=True,
         conf=0.3,
-        device='cuda:0',
+        device=device,
         project=os.path.join(output_dir, project),
-
     )
 
     return results
-
 
 def labels_to_dict(dir_to_convert):
     labels_dict = {}
@@ -47,7 +46,6 @@ def labels_to_dict(dir_to_convert):
                 lines = f.readlines()
                 labels_dict[filename] = [line.strip() for line in lines]
     return labels_dict
-
 
 def majority_voting(base_predictions_path, manhole_results_path):
     # Convert Base Ps to Dictionary
@@ -85,7 +83,6 @@ def majority_voting(base_predictions_path, manhole_results_path):
 
     return base_predictions
 
-
 def inference(source_images, output_dir):
     print(f"Running inference on: {source_images} from python script")
     os.makedirs(output_dir, exist_ok=True)
@@ -99,7 +96,6 @@ def inference(source_images, output_dir):
         with open(os.path.join(output_dir, filename), 'w') as f:
             for label in labels:
                 f.write(label + '\n')
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run inference on a directory of images.')

@@ -1,0 +1,7 @@
+path: ../datasets/
+train: "train/images"
+test: "test/images"
+val: "valid/images"
+nc: 8
+names: ['curb', 'dash', 'distressed', 'grate', 'manhole', 'marking', 'pothole', 'utility']
+

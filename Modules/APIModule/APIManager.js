@@ -5,10 +5,9 @@ import fs from 'fs';
 import VideoManager from '../CameraModule/VideoManager.js';
 import GeoLocateClass from '../GeolocateModule/GeoLocateClass.js';
 import Prediction from '../../schemas/PredictionSchema.js';
-import { uploadFilesToBucket } from '../DatabaseModule/AWSInterface.js';
-import annotationLabelsModel from '../../schemas/annotationLabelsSchema.js';
 import { getLabelNameByClassID } from '../../routes/DashboardRouter.js';
 import ImageManager from '../CameraModule/ImageManager.js';
+import annotationLabelsModel from "../../schemas/annotationLabelsSchema.js";
 
 /**
  * Class representing an APIManager.
@@ -27,7 +26,7 @@ class APIManager {
       ? new VideoManager(mediaFile, coordinatesFile, this.processingFolder, intervalMs)
       : new ImageManager(mediaFile, coordinatesFile, this.processingFolder);
     this.scriptPath = 'Modules/MachineLearningModule/ensemble.py';
-    this.stills = `Modules/CameraModule/${this.processingFolder}/stills`;
+    this.stills = `${this.processingFolder}/stills`;
     this.predictions = `Modules/MachineLearningModule/predictions/${this.processingFolder}`;
     this.coordinates = JSON.parse(coordinatesFile);
   }
@@ -147,7 +146,7 @@ class APIManager {
       await this.createInitialPredictionDocuments();
       await this.runPythonScript();
       await this.savePredictionsToMongo();
-      fs.rmdirSync(`Modules/CameraModule/${this.processingFolder}`, { recursive: true });
+      fs.rmdirSync(`${this.processingFolder}`, { recursive: true });
       fs.rmdirSync(this.predictions, { recursive: true });
     } catch (error) {
       console.error('Error during orchestrateInference:', error);
