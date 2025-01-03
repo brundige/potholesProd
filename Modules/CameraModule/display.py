@@ -1,11 +1,5 @@
-import os
 import argparse
-import asyncio
-import websockets
 from ultralytics import YOLO
-import asyncio
-
-import json
 
 
 def inference(video_source):
