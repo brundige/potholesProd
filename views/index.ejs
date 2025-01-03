@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Upload and Stream</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <img src="citylogo.png" alt="City Logo" class="city-logo">
+    </header>
+
+    <div style="display: flex;">
+        <form id="uploadForm" enctype="multipart/form-data" style="flex: 1;">
+            <div>
+                <label for="video">Choose Video:</label>
+                <input type="file" name="videoFile" id="videoFile">
+            </div>
+
+            <div>
+                <label for="text">Coordinate file:</label>
+                <input type="file" name="coordinates" id="text" accept=".txt">
+            </div>
+
+            <div>
+                <label for="intervalMs">Interval (ms):</label>
+                <input type="text" name="intervalMs" id="intervalMs" value="500">
+            </div>
+
+            <button type="button" onclick="uploadVideo('camera/uploadVideo')">Upload Video</button>
+            <div class="btn-grp">
+                <a href="api/map">View Map</a>
+                <a href="api/">DB Table </a>
+            </div>
+        </form>
+
+
+    </div>
+
+    <div class="footer">
+        <p>© 2024 Chattanooga Object Detection</p>
+    </div>
+</div>
+
+<script>
+    function uploadVideo(action) {
+        const form = document.getElementById('uploadForm');
+        const formData = new FormData(form);
+
+        axios.post(action, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+        })
+            .then(response => {
+                console.log('Video uploaded successfully:', response.data);
+                alert('Video uploaded successfully');
+            })
+            .catch(error => {
+                console.error('Error uploading video:', error);
+                alert('Error uploading video');
+            });
+    }
+</script>
+
+</body>
+</html>
