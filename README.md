@@ -4,8 +4,12 @@
 
 ## Description
 
-This application is a production-ready pothole detection system. It uses Yolo v11 to detect potholes in images and
-videos.
+This application Part one of a Two Part production-ready pothole detection system. It uses Yolo v11 to detect potholes in images and
+videos.Part one injests videos and images, identifies potholes and other features of interest, and stores the images and videos in a database.
+
+Part two is an android application that captures the roadway and sends the images to the server for processing. The server will then return the images with the potholes identified.
+
+
 
 ## Service Requirements
 
