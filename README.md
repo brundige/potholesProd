@@ -1,39 +1,36 @@
-# Pothole Detection v. 1.0
-###### Author: Chris Brundige | city of chattanooga Copyright 2024
-
+# Pothole Detection v1.0
+###### Author: Chris Brundige | City of Chattanooga | Copyright 2024
 
 ## Description
 
-This application Part one of a Two Part production-ready pothole detection system. It uses Yolo v11 to detect potholes in images and
-videos.Part one injests videos and images, identifies potholes and other features of interest, and stores the images and videos in a database.
+This application is part one of a two-part production-ready pothole detection system. It uses Yolo v11 to detect potholes in images and videos. Part one ingests videos and images, identifies potholes and other features of interest, and stores the images and videos in a database.
 
-Part two is an android application that captures the roadway and sends the images to the server for processing. The server will then return the images with the potholes identified.
-
-
+Part two is an Android application that captures roadway images and sends them to the server for processing. The server then returns the images with the potholes identified.
 
 ## Service Requirements
 
-### GIS for Reverse Geocoding of Addresses
-### AWS or Cloud Storage for Image Storage
+- GIS for Reverse Geocoding of Addresses
+- AWS or Cloud Storage for Image Storage
 
-#### Update the .env File
+### Update the `.env` File
 
-```
+```plaintext
 # MongoDB URI
 MONGO_URI=mongodb://localhost:27017/{your_mongo_db_name}
-# GOOGLE GEOLOCATOR API KEY
+# Google Geolocator API Key
 GOOGLE_API_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-# AWS BUCKET
-AWS_BUCKET_NAME="{your_bucket_name}"}
-# AWS ACCESS
+# AWS Bucket
+AWS_BUCKET_NAME="{your_bucket_name}"
+# AWS Access
 AWS_USERNAME=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 AWS_ACCESS_KEY=XXXXXXXXXXXXXXXXX
 AWS_SECRET_KEY=XXXXXXXXXXXXXXXXX
-# AWS REGION
+# AWS Region
 AWS_REGION="us-east-1" // use your region
-# AWS ENDPOINT
+# AWS Endpoint
 AWS_ENDPOINT="https://s3.amazonaws.com"  // current as of 1.6.24
 INFERENCE_MODEL={your_model_name}.pt  // *** Feature not yet implemented ***
+
 ```
 
 ## Hardware Requirements:
