@@ -7,6 +7,36 @@
 This application is a production-ready pothole detection system. It uses Yolo v11 to detect potholes in images and
 videos.
 
+## Service Requirements
+
+### GIS for Reverse Geocoding of Addresses
+### AWS or Cloud Storage for Image Storage
+
+#### Update the .env File
+
+```
+# MongoDB URI
+MONGO_URI=mongodb://localhost:27017/{your_mongo_db_name}
+# GOOGLE GEOLOCATOR API KEY
+GOOGLE_API_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+# AWS BUCKET
+AWS_BUCKET_NAME="{your_bucket_name}"}
+# AWS ACCESS
+AWS_USERNAME=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+AWS_ACCESS_KEY=XXXXXXXXXXXXXXXXX
+AWS_SECRET_KEY=XXXXXXXXXXXXXXXXX
+# AWS REGION
+AWS_REGION="us-east-1" // use your region
+# AWS ENDPOINT
+AWS_ENDPOINT="https://s3.amazonaws.com"  // current as of 1.6.24
+INFERENCE_MODEL={your_model_name}.pt  // *** Feature not yet implemented ***
+```
+
+## Hardware Requirements:
+
+The application will run  with a CPU or GPU. The GPU is *highly* recommended for faster processing.
+This application was built using a NVIDIA RTX 4090 GPU.
+
 ## Download and Installation
 
 ## Downloading the Source Code
@@ -56,3 +86,5 @@ To run the application, you need to navigate to the root directory of the projec
 ```bash
 docker-compose up --build -d 
 ```
+
+
