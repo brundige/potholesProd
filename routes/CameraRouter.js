@@ -112,6 +112,7 @@ router.post('/uploadVideo', upload, multerErrorHandler, async (req, res) => {
 });
 
 router.post('/uploadImages', image_upload, multerErrorHandler, async (req, res) => {
+    console.log('Received image files:');
     try {
         let imageFiles = req.files.imageFiles;
 
@@ -122,30 +123,28 @@ router.post('/uploadImages', image_upload, multerErrorHandler, async (req, res) 
         let coordinates = [];
         let images = [];
 
-
         for (const file of imageFiles) {
-            const metadata = await sharp(file.buffer).metadata();
-            const exifData = exifParser.create(file.buffer).parse();
-            const iccProfile = metadata.icc ? icc.parse(metadata.icc) : null;
-
-            console.log('Image metadata:', metadata);
-            console.log('EXIF data:', exifData);
-            console.log('ICC profile:', iccProfile);
-
             try {
+                // extract meta data
+                const metadata = await sharp(file.buffer).metadata();
+                const exifData = exifParser.create(file.buffer).parse();
+                const iccProfile = metadata.icc ? icc.parse(metadata.icc) : null;
+
+                console.log('Image metadata:', metadata);
+                console.log('EXIF data:', exifData);
+                console.log('ICC profile:', iccProfile);
+
                 const gpsCoordinates = extractGPSCoordinates(exifData);
                 console.log('GPS coordinates:', gpsCoordinates);
                 coordinates.push(gpsCoordinates);
-                console.log(`buffer data`, file.buffer);
                 images.push(file.buffer);
 
             } catch (error) {
-                console.error('Error extracting GPS coordinates:', error);
+                console.error('Error processing image file:', error);
             }
-
-
         }
-        console.log(images);
+
+
 
         const apiManager = new APIManager('image', images, JSON.stringify(coordinates));
         await apiManager.orchestrateInference();
@@ -155,6 +154,7 @@ router.post('/uploadImages', image_upload, multerErrorHandler, async (req, res) 
         console.error('Error during image processing:', error);
         return res.status(500).send('Internal Server Error');
     }
-});
+}
+);
 
 export default router;

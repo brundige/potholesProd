@@ -1,7 +1,7 @@
 # Use the official NVIDIA CUDA base image
 FROM nvidia/cuda:12.6.2-devel-ubuntu22.04
 
-CMD ["nvidia-smi"]
+#CMD ["nvidia-smi"]
 
 # Install the latest version of Node.js
 RUN apt-get update && apt-get install -y curl && \
