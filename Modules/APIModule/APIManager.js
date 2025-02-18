@@ -17,7 +17,7 @@ class APIManager {
    * Create an APIManager.
    * @param {string} mediaType - The type of media ('video' or 'image').
    * @param {Buffer} mediaFile - The media file buffer.
-   * @param {Buffer} coordinatesFile - The coordinates file buffer.
+   * @param {string} coordinatesFile - The coordinates file buffer.
    * @param {number} [intervalMs] - Interval in milliseconds for video processing.
    */
   constructor(mediaType, mediaFile, coordinatesFile, intervalMs) {
@@ -140,9 +140,13 @@ class APIManager {
    * @return {Promise<void>} A promise that resolves when the process is complete.
    */
   async orchestrateInference() {
+
+
+
+
     try {
       await this.mediaManager.saveToDirectory();
-      await this.mediaManager.processMedia();
+     // await this.mediaManager.processMedia();
       await this.createInitialPredictionDocuments();
       await this.runPythonScript();
       await this.savePredictionsToMongo();

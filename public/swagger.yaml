@@ -1,0 +1,147 @@
+openapi: 3.0.0
+info:
+  title: DashboardRouter API
+  version: 1.0.0
+paths:
+  /api/potholeImage/{fileName}:
+    get:
+      summary: Fetches and streams a pothole image from the AWS bucket
+      parameters:
+        - name: fileName
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The name of the file to fetch
+      responses:
+        '200':
+          description: Image successfully fetched and streamed
+          content:
+            image/png: {}
+        '400':
+          description: File name is required
+        '404':
+          description: Image not found
+        '500':
+          description: Error while streaming the image
+  /api/updateAnnotation:
+    post:
+      summary: Updates the annotation data for a specific pothole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                potholeId:
+                  type: string
+                annotations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      label_id:
+                        type: string
+                      x_center:
+                        type: number
+                      y_center:
+                        type: number
+                      width:
+                        type: number
+                      height:
+                        type: number
+      responses:
+        '200':
+          description: Annotation updated successfully
+        '400':
+          description: Fields missing
+        '404':
+          description: Pothole not found
+        '500':
+          description: Error updating annotation
+  /api/updatePredictionOutcome/{potholeId}/{predictionId}:
+    post:
+      summary: Updates the prediction outcome for a specific pothole prediction
+      parameters:
+        - name: potholeId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: predictionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                outcome:
+                  type: string
+                  enum: [false_positive, true_positive, false_negative, true_negative, unknown]
+      responses:
+        '200':
+          description: Prediction outcome updated successfully
+        '400':
+          description: Prediction ID and outcome are required or invalid outcome value
+        '404':
+          description: Prediction not found
+        '500':
+          description: Error updating prediction outcome
+  /api/labels:
+    get:
+      summary: Fetches all annotation labels
+      responses:
+        '200':
+          description: Labels fetched successfully
+        '500':
+          description: Error fetching labels
+  /api/map:
+    get:
+      summary: Renders the map view
+      responses:
+        '200':
+          description: Map view rendered successfully
+  /api/potholes:
+    get:
+      summary: Fetches all potholes
+      responses:
+        '200':
+          description: Potholes fetched successfully
+        '500':
+          description: Error fetching potholes
+  /api/potholes/{id}:
+    get:
+      summary: Fetches a specific pothole by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Pothole fetched successfully
+        '404':
+          description: Pothole not found
+        '500':
+          description: Error fetching pothole
+  /api/potholes/street/{streetName}:
+    get:
+      summary: Fetches all potholes by street name
+      parameters:
+        - name: streetName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Potholes fetched successfully
+        '500':
+          description: Error fetching potholes

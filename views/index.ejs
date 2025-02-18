@@ -18,7 +18,7 @@
         <form id="uploadForm" enctype="multipart/form-data" style="flex: 1;">
             <div>
                 <label for="video">Choose Video:</label>
-                <input type="file" name="videoFile" id="videoFile">
+                <input type="file" name="videoFile" id="videoFile" value="">
             </div>
 
             <div>
@@ -27,14 +27,16 @@
             </div>
 
             <div>
-                <label for="intervalMs">Interval (ms):</label>
-                <input type="text" name="intervalMs" id="intervalMs" value="500">
+                <label for="intervalMs">frames per second:</label>
+                <input type="text" name="intervalMs" id="intervalMs" value="1">
             </div>
 
             <button type="button" onclick="uploadVideo('camera/uploadVideo')">Upload Video</button>
             <div class="btn-grp">
                 <a href="api/map">View Map</a>
-                <a href="api/">DB Table </a>
+                <a href="api/docs">API Docs</a>
+                <a href="https://github.com/brundige/potholesProd/blob/master/README.md" target="_blank">source code</a>
+
             </div>
         </form>
 

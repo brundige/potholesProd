@@ -14,9 +14,11 @@ class ImageManager extends MediaManager {
             fs.mkdirSync(this.processingFolder, { recursive: true });
         }
         this.mediaFile.forEach((file, index) => {
+            console.log(`binary file: ${file}`);
             fs.writeFileSync(path.join(this.stills, `${index}.png`), file);
+            fs.writeFileSync(path.join(this.processingFolder, 'coordinatesFile'), this.coordinatesFile);
         });
-        fs.writeFileSync(path.join(this.processingFolder, 'coordinatesFile'), this.coordinatesFile);
+
     }
 
     processMedia() {

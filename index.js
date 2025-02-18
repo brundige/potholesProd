@@ -22,12 +22,9 @@ const server = http.createServer(app);
 const port = 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/test';
 
-console.log('MONGO_URI:', MONGO_URI); // Verify MONGO_URI
 
-// Connect to MongoDB
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('Could not connect to MongoDB', err));
+
+
 
 // Set view engine
 app.set('views', path.join(__dirname, 'views'));
@@ -46,6 +43,7 @@ app.use('/camera', CameraRouter);
 app.use('/api', DashboardRouter);
 app.get('/', (req, res) => res.render('index', { title: 'Express' }));
 
+
 // Error handling
 app.use((req, res, next) => {
   next(createError(404));
@@ -57,6 +55,11 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.render('error');
 });
+
+// Connect to MongoDB
+mongoose.connect(MONGO_URI)
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('Could not connect to MongoDB', err));
 
 // Start the server
 app.listen(port, () => {

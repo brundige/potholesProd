@@ -1,14 +1,13 @@
 import express from 'express';
+import path from 'path';
 import Pothole from '../schemas/PredictionSchema.js';
-
 import { getFileFromBucket } from '../Modules/DatabaseModule/AWSInterface.js';
 
 const router = express.Router();
+const __dirname = path.resolve();
 
 const validOutcomes = ['false_positive', 'true_positive', 'false_negative', 'true_negative', 'unknown'];
 const confidenceOptions = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
-
-
 
 router.get('/potholeImage/:fileName', async (req, res) => {
   try {
@@ -135,13 +134,24 @@ router.get('/potholes/:id', async (req, res) => {
   }
 });
 
+router.get('/potholes/street/:streetName', async (req, res) => {
+  try {
+    const { streetName } = req.params;
+    const potholes = await Pothole.find({ street_name: streetName });
+    res.json(potholes);
+  } catch (error) {
+    console.error('Error fetching potholes:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
+router.get('/docs', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'API_documentation.html'));
+});
 
 export function getLabelNameByClassID(index, labels) {
   const label = labels.find((lbl) => lbl.label_index === index);
   return label ? label.label_name : 'Unknown Label';
 }
-
-
 
 export default router;
