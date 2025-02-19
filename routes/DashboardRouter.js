@@ -8,6 +8,9 @@ const __dirname = path.resolve();
 
 const validOutcomes = ['false_positive', 'true_positive', 'false_negative', 'true_negative', 'unknown'];
 const confidenceOptions = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+const labels=  ['curb', 'dash', 'distressed', 'grate', 'manhole', 'marking', 'pothole', 'utility']
+
+
 
 router.get('/potholeImage/:fileName', async (req, res) => {
   try {

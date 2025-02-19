@@ -37,7 +37,7 @@ class APIManager {
      */
     runPythonScript() {
         const args = [this.stills, this.predictions];
-       // const pythonPath = "C:\\Python312\\python.exe"
+        // const pythonPath = "C:\\Python312\\python.exe"
         return new Promise((resolve, reject) => {
             const pythonProcess = spawn('python', [this.scriptPath, ...args], {
                 stdio: 'inherit' // This will inherit the stdio streams from the parent process
@@ -72,16 +72,22 @@ class APIManager {
             const address = await locator.reverseGeocode(coord.lat, coord.lng);
 
             const prediction = new Prediction({
-                file_name: `${this.processingFolder}_${fileIndex}.png`,
-                prediction_results: [], // Empty array for predictions
-                annotation_data: [],    // Empty array for annotations
-                coordinates: coord,
-                address: address,
-                image_uri: `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/stills/${this.processingFolder}_${file}`
+                type: "Feature",
+                geometry: {
+                    type: "Point",
+                    coordinates: [coord.lng, coord.lat]
+                },
+                properties: {
+                    file_name: `${this.processingFolder}_${fileIndex}.png`,
+                    prediction_results: [], // Empty array for predictions
+                    annotation_data: [],    // Empty array for annotations
+                    address: address,
+                    image_uri: `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/stills/${this.processingFolder}_${file}`
+                }
             });
 
             await prediction.save();
-            console.log(`Initial Prediction document created for: ${prediction.file_name}`);
+            console.log(`Initial Prediction document created for: ${prediction.properties.file_name}`);
         }
     }
 
@@ -101,6 +107,9 @@ class APIManager {
 
             // Array to store prediction results for this image
             const predictionResults = [];
+            // labels
+            const labels = ['curb', 'dash', 'distressed', 'grate', 'manhole', 'marking', 'pothole', 'utility']
+
 
             for (const line of data) {
                 if (line.trim() === '') continue;
@@ -109,7 +118,8 @@ class APIManager {
                 const class_id = parseInt(values[0].trim());
 
                 const predictionResult = {
-                    label_id: getLabelNameByClassID(class_id, all_labels),
+                    //label_id: getLabelNameByClassID(class_id, all_labels), changing this to outout the intger value of the class_id
+                    label_id: labels[class_id],  // handle description in the front end
                     x_center: parseFloat(values[1]),
                     y_center: parseFloat(values[2]),
                     width: parseFloat(values[3]),
@@ -123,13 +133,17 @@ class APIManager {
 
             // Find the existing Prediction document and update
             const updatedPrediction = await Prediction.findOneAndUpdate(
-                {file_name: `${this.processingFolder}_${fileIndex}.png`}, // Find by file_name
-                {prediction_results: predictionResults}, // Update prediction_results
+                {"properties.file_name": `${this.processingFolder}_${fileIndex}.png`}, // Find by file_name
+                {
+                    $set: {
+                        "properties.prediction_results": predictionResults // Update prediction_results
+                    }
+                },
                 {new: true} // Return the updated document
             );
 
             if (updatedPrediction) {
-                console.log(`Predictions added to Prediction: ${updatedPrediction.file_name}`);
+                console.log(`Predictions added to Prediction: ${updatedPrediction.properties.file_name}`);
             } else {
                 console.warn(`No Prediction found for file: ${this.processingFolder}_${fileIndex}.png`);
             }
