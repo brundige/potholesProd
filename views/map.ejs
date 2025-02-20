@@ -3,178 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pothole Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <title>Pothole Detection Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <style>
-        html, body {
+        body {
             margin: 0;
             padding: 0;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
             height: 100vh;
-            overflow: hidden;
+        }
+
+        .sidebar {
+            padding: 20px;
+            background-color: #2d2d2d;
+            overflow-y: auto;
+        }
+
+        .stats-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #3d3d3d;
+            border-radius: 8px;
+        }
+
+        .map-container {
+            height: 100%;
         }
 
         #map {
-            height: 100vh;
+            height: 100%;
+            width: 100%;
         }
 
-        header {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+        .stats-heading {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #4a9eff;
+        }
+
+        .stat-item {
+            margin: 10px 0;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            padding: 20px;
-            background-color: rgba(2, 33, 43, 0.15);
-            font-family: Arial, sans-serif;
-            color: #00435d;
-            z-index: 1000; /* Ensure the header is on top */
-        }
-
-        header img {
-            height: 50px;
-            margin-right: 20px;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-
-        .search-bar {
-            margin-right: 100px;
-            display: flex;
             align-items: center;
         }
 
-        .search-bar input {
-            padding: 5px;
-            font-size: 16px;
+        .confidence-bar {
+            width: 100px;
+            height: 8px;
+            background: #2d2d2d;
+            border-radius: 4px;
+            overflow: hidden;
         }
 
-        table {
-            border-collapse: collapse;
-            width: 100%;
+        .confidence-fill {
+            height: 100%;
+            background: #4a9eff;
         }
 
-        th, td {
-            border: 1px solid #4a90e2; /* Thin border */
-            padding: 8px;
-            text-align: left;
+        .image-preview {
+            max-width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-top: 10px;
         }
 
-        th {
-            background-color: rgba(237, 237, 237, 0.83);
-        }
-        .inline {
-            display: flex;
-            align-items: center;
+        .outcome-tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
         }
 
-        #info-panel {
-            position: absolute;
-            font-family: Roboto, sans-serif;
-            top: 150px;
-            right: 50px;
-            width: 20vw;
-            height: 80vh;
-            background-color: rgba(33, 32, 32, 0.21);
-            padding: 20px;
-            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
-            overflow-y: auto;
-            z-index: 1000;
-            color: #357ab8;
-        }
-
-        #score {
-            color: #d8be12;
-            padding: 10px;
-        }
+        .outcome-true-positive { background-color: #28a745; }
+        .outcome-false-positive { background-color: #dc3545; }
+        .outcome-true-negative { background-color: #17a2b8; }
+        .outcome-false-negative { background-color: #ffc107; color: #000; }
+        .outcome-unknown { background-color: #6c757d; }
     </style>
 </head>
 <body>
-<header>
-    <div class="inline">
-        <img src="/citylogo.png" alt="City Logo">
-        <h1>City of Chattanooga | Roadways</h1>
+<div class="dashboard-container">
+    <div class="sidebar">
+        <div class="stats-container">
+            <div class="stats-heading">Overview</div>
+            <div class="stat-item">
+                <span>Total Predictions:</span>
+                <span id="totalPredictions">Loading...</span>
+            </div>
+            <div class="stat-item">
+                <span>High Confidence (>90%):</span>
+                <span id="highConfidence">Loading...</span>
+            </div>
+            <div class="stat-item">
+                <span>Last Updated:</span>
+                <span id="lastUpdated">Loading...</span>
+            </div>
+        </div>
+        <div class="stats-container">
+            <div class="stats-heading">Prediction Outcomes</div>
+            <div id="outcomeStats">Loading...</div>
+        </div>
+        <div class="stats-container">
+            <div class="stats-heading">Latest Detection</div>
+            <div id="latestDetection">Loading...</div>
+        </div>
     </div>
-    <div class="search-bar">
-        <input type="text" placeholder="Search..." id="search-input">
+    <div class="map-container">
+        <div id="map"></div>
     </div>
-</header>
-<div id="map"></div>
-<div id="info-panel">
-    <div class="inline">
-        <h2>Road Information | </h2>
-        <h2 id="score">44</h2>
-    </div>
-    <h2 id="road-name">East Main</h2>
-    <img src="/pothole.jpg" alt="Pothole Image Preview" style="width:100%;height:auto;"/>
-
-    <hr>
-    <p id="object-count">Detected Objects: 1</p>
-    <table>
-        <thead>
-        <tr>
-            <th>Detection Type</th>
-            <th>Prevalence</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <td>Pothole</td>
-            <td>1</td>
-        </tr>
-        </tbody>
-    </table>
-    <p id="condition-index">Condition Index: 0.95</p>
 </div>
 
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-    const map = L.map('map').setView([35.0456, -85.3097], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
+    // Chattanooga, TN coordinates
+    const CHATTANOOGA_LAT = 35.0456;
+    const CHATTANOOGA_LNG = -85.3097;
+    const DEFAULT_ZOOM = 12;
+
+    // Initialize map with Chattanooga center
+    const map = L.map('map').setView([CHATTANOOGA_LAT, CHATTANOOGA_LNG], DEFAULT_ZOOM);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    fetch('/potholes')
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(pothole => {
-                const marker = L.marker([pothole.coordinates.lat, pothole.coordinates.lng]).addTo(map);
-                marker.on('click', () => {
-                    document.getElementById('road-name').innerText = pothole.street_name;
-                    document.getElementById('score').innerText = Math.floor(pothole.conditionIndex * 100);
-                    document.getElementById('object-count').innerText = `Detected Objects: ${pothole.prediction_results.length}`;
-                    document.getElementById('condition-index').innerText = `Condition Index: ${pothole.conditionIndex}`;
-               table.innerHTML = '';
-                    pothole.prediction_results.forEach(object => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${object.type}</td>
-                            <td>${object.prevalence}</td>
-                        `;
-                        table.appendChild(row);
-                    });
+    // Create markers group
+    const markers = L.layerGroup().addTo(map);
 
-                    document.querySelector('img').src = pothole.image_uri;
-                });
-            });
-        })
-        .catch(error => console.error('Error fetching pothole data:', error));
+    // Reset to Chattanooga button
+    L.Control.ResetView = L.Control.extend({
+        onAdd: function(map) {
+            const button = L.DomUtil.create('button');
+            button.innerHTML = '🏠 Reset View';
+            button.style.padding = '8px 16px';
+            button.style.backgroundColor = '#2d2d2d';
+            button.style.color = 'white';
+            button.style.border = 'none';
+            button.style.borderRadius = '4px';
+            button.style.cursor = 'pointer';
 
-    document.getElementById('search-input').addEventListener('input', event => {
-        const query = event.target.value.toLowerCase();
-        potholes.forEach(pothole => {
-            const marker = pothole.marker;
-            if (pothole.name.toLowerCase().includes(query)) {
-                marker.addTo(map);
-            } else {
-                marker.removeFrom(map);
-            }
-        });
+            button.onclick = function() {
+                map.setView([CHATTANOOGA_LAT, CHATTANOOGA_LNG], DEFAULT_ZOOM);
+            };
+
+            return button;
+        }
     });
+    new L.Control.ResetView({ position: 'topleft' }).addTo(map);
+
+    // Previous outcome colors remain the same
+    const outcomeColors = {
+        true_positive: '#28a745',
+        false_positive: '#dc3545',
+        true_negative: '#17a2b8',
+        false_negative: '#ffc107',
+        unknown: '#6c757d'
+    };
+
+    async function fetchPredictionData() {
+        try {
+            const response = await fetch('/api/potholes');
+            const data = await response.json();
+
+            // Clear existing markers
+            markers.clearLayers();
+
+            // Update statistics
+            updateDashboardStats(data);
+
+            // Add markers to map
+            data.forEach(prediction => {
+                const [lng, lat] = prediction.geometry.coordinates;
+                const highestConfidence = Math.max(...prediction.properties.prediction_results.map(p => p.confidence));
+
+                const marker = L.circle([lat, lng], {
+                    color: getMarkerColor(prediction.properties.prediction_results),
+                    fillColor: getMarkerColor(prediction.properties.prediction_results),
+                    fillOpacity: 0.7,
+                    radius: 20
+                });
+
+                marker.bindPopup(createPopupContent(prediction));
+                markers.addLayer(marker);
+            });
+
+            // If no data points exist, keep Chattanooga center
+            // Otherwise, fit to markers
+            if (data.length > 0) {
+                const group = L.featureGroup(markers.getLayers());
+                map.fitBounds(group.getBounds());
+            } else {
+                map.setView([CHATTANOOGA_LAT, CHATTANOOGA_LNG], DEFAULT_ZOOM);
+            }
+        } catch (error) {
+            console.error('Error fetching prediction data:', error);
+            // On error, ensure we're still centered on Chattanooga
+            map.setView([CHATTANOOGA_LAT, CHATTANOOGA_LNG], DEFAULT_ZOOM);
+        }
+    }
+
+
+    function updateDashboardStats(data) {
+        // Update total predictions
+        const totalPredictions = data.reduce((sum, pred) =>
+            sum + pred.properties.prediction_results.length, 0);
+        document.getElementById('totalPredictions').textContent = totalPredictions;
+
+        // Update high confidence count
+        const highConfidence = data.reduce((sum, pred) =>
+            sum + pred.properties.prediction_results.filter(p => p.confidence > 0.9).length, 0);
+        document.getElementById('highConfidence').textContent = highConfidence;
+
+        // Update last updated timestamp
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+
+        // Update outcome statistics
+        const outcomes = data.reduce((acc, pred) => {
+            pred.properties.prediction_results.forEach(p => {
+                acc[p.outcome] = (acc[p.outcome] || 0) + 1;
+            });
+            return acc;
+        }, {});
+
+        const outcomeHTML = Object.entries(outcomes)
+            .map(([outcome, count]) => `
+                    <div class="stat-item">
+                        <span class="outcome-tag outcome-${outcome}">${outcome.replace('_', ' ')}</span>
+                        <span>${count}</span>
+                    </div>
+                `).join('');
+
+        document.getElementById('outcomeStats').innerHTML = outcomeHTML;
+
+        // Update latest detection
+        if (data.length > 0) {
+            const latest = data.reduce((prev, current) =>
+                new Date(current.created_at) > new Date(prev.created_at) ? current : prev
+            );
+
+            const latestHTML = `
+                    <div class="stat-item">
+                        <span>Address:</span>
+                        <span>${latest.properties.address}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Confidence:</span>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${Math.max(...latest.properties.prediction_results.map(p => p.confidence * 100))}%"></div>
+                        </div>
+                    </div>
+                    <img src="${latest.properties.image_uri}" class="image-preview">
+                `;
+
+            document.getElementById('latestDetection').innerHTML = latestHTML;
+        }
+    }
+
+    // Initial fetch
+    fetchPredictionData();
+
+    // Refresh data every 5 minutes
+    setInterval(fetchPredictionData, 300000);
 </script>
 </body>
 </html>
