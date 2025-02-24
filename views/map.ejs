@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pothole Detection Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
     <style>
         body {
             margin: 0;
@@ -35,6 +35,7 @@
 
         .map-container {
             height: 100%;
+            position: relative;
         }
 
         #map {
@@ -46,6 +47,23 @@
             font-size: 1.2em;
             margin-bottom: 10px;
             color: #4a9eff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .refresh-button {
+            background: none;
+            border: none;
+            color: #4a9eff;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        .refresh-button:hover {
+            background-color: #4a9eff33;
         }
 
         .stat-item {
@@ -66,6 +84,7 @@
         .confidence-fill {
             height: 100%;
             background: #4a9eff;
+            transition: width 0.3s ease;
         }
 
         .image-preview {
@@ -82,18 +101,78 @@
             font-size: 0.9em;
         }
 
-        .outcome-true-positive { background-color: #28a745; }
-        .outcome-false-positive { background-color: #dc3545; }
-        .outcome-true-negative { background-color: #17a2b8; }
-        .outcome-false-negative { background-color: #ffc107; color: #000; }
-        .outcome-unknown { background-color: #6c757d; }
+        .trend-chart {
+            height: 200px;
+            margin-top: 15px;
+            background-color: #3d3d3d;
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        .reset-view-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            padding: 8px 16px;
+            background-color: #2d2d2d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .reset-view-btn:hover {
+            background-color: #3d3d3d;
+        }
+
+        .outcome-true-positive {
+            background-color: #28a745;
+        }
+
+        .outcome-false-positive {
+            background-color: #dc3545;
+        }
+
+        .outcome-true-negative {
+            background-color: #17a2b8;
+        }
+
+        .outcome-false-negative {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .outcome-unknown {
+            background-color: #6c757d;
+        }
+
+        .loading-indicator {
+            display: none;
+            margin-left: 10px;
+            color: #4a9eff;
+        }
+
+        .loading .loading-indicator {
+            display: inline;
+        }
     </style>
 </head>
 <body>
 <div class="dashboard-container">
     <div class="sidebar">
         <div class="stats-container">
-            <div class="stats-heading">Overview</div>
+            <div class="stats-heading">
+                Overview
+                <button onclick="fetchPredictionData()" class="refresh-button">
+                    ↻
+                    <span class="loading-indicator">Loading...</span>
+                </button>
+            </div>
             <div class="stat-item">
                 <span>Total Predictions:</span>
                 <span id="totalPredictions">Loading...</span>
@@ -106,6 +185,11 @@
                 <span>Last Updated:</span>
                 <span id="lastUpdated">Loading...</span>
             </div>
+            <div class="stat-item">
+                <span>Roadway Score:</span>
+                <span id="roadwayScore">Loading...</span>
+            </div>
+
         </div>
         <div class="stats-container">
             <div class="stats-heading">Prediction Outcomes</div>
@@ -115,12 +199,20 @@
             <div class="stats-heading">Latest Detection</div>
             <div id="latestDetection">Loading...</div>
         </div>
+        <div class="stats-container">
+            <div class="stats-heading">Detection Trend</div>
+            <div id="detectionTrend" class="trend-chart">
+                <!-- Trend chart will be rendered here -->
+            </div>
+        </div>
     </div>
     <div class="map-container">
+        <button class="reset-view-btn" onclick="resetMapView()">
+            🏠 Reset View
+        </button>
         <div id="map"></div>
     </div>
 </div>
-
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
@@ -138,38 +230,83 @@
     // Create markers group
     const markers = L.layerGroup().addTo(map);
 
-    // Reset to Chattanooga button
-    L.Control.ResetView = L.Control.extend({
-        onAdd: function(map) {
-            const button = L.DomUtil.create('button');
-            button.innerHTML = '🏠 Reset View';
-            button.style.padding = '8px 16px';
-            button.style.backgroundColor = '#2d2d2d';
-            button.style.color = 'white';
-            button.style.border = 'none';
-            button.style.borderRadius = '4px';
-            button.style.cursor = 'pointer';
+    function resetMapView() {
+        map.setView([CHATTANOOGA_LAT, CHATTANOOGA_LNG], DEFAULT_ZOOM);
+    }
 
-            button.onclick = function() {
-                map.setView([CHATTANOOGA_LAT, CHATTANOOGA_LNG], DEFAULT_ZOOM);
-            };
-
-            return button;
-        }
-    });
-    new L.Control.ResetView({ position: 'topleft' }).addTo(map);
-
-    // Previous outcome colors remain the same
     const outcomeColors = {
-        true_positive: '#28a745',
-        false_positive: '#dc3545',
-        true_negative: '#17a2b8',
-        false_negative: '#ffc107',
-        unknown: '#6c757d'
+
+        pothole: '#17a2b8',
+        distressed: '#ffc107',
+
     };
+
+
+    function getMarkerColor(results) {
+        if (!results || results.length === 0) return outcomeColors.unknown;
+        const highestConfidence = Math.max(...results.map(r => r.confidence));
+        const result = results.find(r => r.confidence === highestConfidence);
+        return outcomeColors[result.label_id] || outcomeColors.unknown;
+    }
+
+    function createPopupContent(prediction) {
+        const highestConfidence = Math.max(...prediction.properties.prediction_results.map(p => p.confidence));
+        return `
+            <div style="max-width: 200px">
+                <p style="margin: 0 0 8px">${prediction.properties.address}</p>
+                <p style="margin: 0">Confidence: ${(highestConfidence * 100).toFixed(1)}%</p>
+            </div>
+        `;
+    }
+
+    function calculateSegmentLength(coordinates) {
+        if (!coordinates || coordinates.length < 2) return 0;
+
+        const R = 6371e3; // Earth's radius in meters
+        const toRadians = (degrees) => degrees * (Math.PI / 180);
+
+        let totalLength = 0;
+
+        for (let i = 0; i < coordinates.length - 1; i++) {
+            const [lat1, lon1] = coordinates[i];
+            const [lat2, lon2] = coordinates[i + 1];
+
+            const φ1 = toRadians(lat1);
+            const φ2 = toRadians(lat2);
+            const Δφ = toRadians(lat2 - lat1);
+            const Δλ = toRadians(lon2 - lon1);
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            const distance = R * c;
+            totalLength += distance;
+        }
+
+        return totalLength;
+    }
+
+    function calcRoadwayScore(roadSegments) {
+        if (!roadSegments || roadSegments.length === 0) return 0;
+
+        let totalFeatures = 0;
+        let totalLength = 0;
+
+        roadSegments.forEach(segment => {
+            const {features, coordinates} = segment;
+            totalFeatures += features.length;
+            totalLength += calculateSegmentLength(coordinates);
+        });
+
+        const score = (totalFeatures / totalLength) * 100;
+        return score.toFixed(2); // Return the score as a percentage with 2 decimal places
+    }
 
     async function fetchPredictionData() {
         try {
+            document.querySelector('.refresh-button').classList.add('loading');
             const response = await fetch('/api/potholes');
             const data = await response.json();
 
@@ -187,81 +324,79 @@
                 const marker = L.circle([lat, lng], {
                     color: getMarkerColor(prediction.properties.prediction_results),
                     fillColor: getMarkerColor(prediction.properties.prediction_results),
-                    fillOpacity: 0.7,
-                    radius: 20
+                    fillOpacity: 1,
+                    radius: 3
                 });
 
                 marker.bindPopup(createPopupContent(prediction));
                 markers.addLayer(marker);
             });
 
-            // If no data points exist, keep Chattanooga center
-            // Otherwise, fit to markers
             if (data.length > 0) {
                 const group = L.featureGroup(markers.getLayers());
                 map.fitBounds(group.getBounds());
-            } else {
-                map.setView([CHATTANOOGA_LAT, CHATTANOOGA_LNG], DEFAULT_ZOOM);
             }
+
+            // Calculate and update roadway score
+            document.getElementById('roadwayScore').textContent = calcRoadwayScore(data.map(prediction => ({
+                features: prediction.properties.prediction_results,
+                coordinates: prediction.geometry.coordinates
+            })));
+
         } catch (error) {
             console.error('Error fetching prediction data:', error);
-            // On error, ensure we're still centered on Chattanooga
-            map.setView([CHATTANOOGA_LAT, CHATTANOOGA_LNG], DEFAULT_ZOOM);
+        } finally {
+            document.querySelector('.refresh-button').classList.remove('loading');
         }
     }
 
 
     function updateDashboardStats(data) {
-        // Update total predictions
         const totalPredictions = data.reduce((sum, pred) =>
             sum + pred.properties.prediction_results.length, 0);
         document.getElementById('totalPredictions').textContent = totalPredictions;
 
-        // Update high confidence count
         const highConfidence = data.reduce((sum, pred) =>
             sum + pred.properties.prediction_results.filter(p => p.confidence > 0.9).length, 0);
         document.getElementById('highConfidence').textContent = highConfidence;
 
-        // Update last updated timestamp
         document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
 
-        // Update outcome statistics
         const outcomes = data.reduce((acc, pred) => {
             pred.properties.prediction_results.forEach(p => {
-                acc[p.outcome] = (acc[p.outcome] || 0) + 1;
+                acc[p.label_id] = (acc[p.label_id] || 0) + 1;
             });
             return acc;
         }, {});
 
         const outcomeHTML = Object.entries(outcomes)
             .map(([outcome, count]) => `
-                    <div class="stat-item">
-                        <span class="outcome-tag outcome-${outcome}">${outcome.replace('_', ' ')}</span>
-                        <span>${count}</span>
-                    </div>
-                `).join('');
+                <div class="stat-item">
+                    <span class="outcome-tag outcome-${outcome}">${outcome.replace('_', ' ')}</span>
+                    <span>${count}</span>
+                </div>
+            `).join('');
 
         document.getElementById('outcomeStats').innerHTML = outcomeHTML;
 
-        // Update latest detection
         if (data.length > 0) {
             const latest = data.reduce((prev, current) =>
                 new Date(current.created_at) > new Date(prev.created_at) ? current : prev
             );
 
             const latestHTML = `
-                    <div class="stat-item">
-                        <span>Address:</span>
-                        <span>${latest.properties.address}</span>
+                <div class="stat-item">
+                    <span>Address:</span>
+                    <span>${latest.properties.address}</span>
+                </div>
+                <div class="stat-item">
+                    <span>Confidence:</span>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${Math.max(...latest.properties.prediction_results.map(p => p.confidence * 100))}%"></div>
                     </div>
-                    <div class="stat-item">
-                        <span>Confidence:</span>
-                        <div class="confidence-bar">
-                            <div class="confidence-fill" style="width: ${Math.max(...latest.properties.prediction_results.map(p => p.confidence * 100))}%"></div>
-                        </div>
-                    </div>
-                    <img src="${latest.properties.image_uri}" class="image-preview">
-                `;
+                </div>
+                <img src="${latest.properties.image_uri}" class="image-preview" alt="Latest detection">
+            `;
 
             document.getElementById('latestDetection').innerHTML = latestHTML;
         }
