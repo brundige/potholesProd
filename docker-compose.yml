@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   app:
+    restart: always
     build: .
     ports:
       - "3000:3000"
@@ -9,6 +10,7 @@ services:
       MONGO_URI: mongodb://mongo:27017/test
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: all
+
     depends_on:
       - mongo
     networks:
@@ -16,6 +18,7 @@ services:
 
 
   mongo:
+    restart: always
     image: mongo:latest
     container_name: mongo
     environment:
