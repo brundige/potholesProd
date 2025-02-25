@@ -8,6 +8,7 @@ import Prediction from '../../schemas/PredictionSchema.js';
 import {getLabelNameByClassID} from '../../routes/DashboardRouter.js';
 import ImageManager from '../CameraModule/ImageManager.js';
 import annotationLabelsModel from "../../schemas/annotationLabelsSchema.js";
+import {uploadFilesToBucket} from "../DatabaseModule/AWSInterface.js";
 
 /**
  * Class representing an APIManager.
@@ -158,6 +159,11 @@ class APIManager {
         try {
             await this.mediaManager.saveToDirectory();
             await this.mediaManager.processMedia();
+
+            // upload to s3
+            console.log("attempting to upload to s3")
+            await uploadFilesToBucket(process.env.AWS_BUCKET_NAME, this.stills, this.processingFolder);
+
             await this.createInitialPredictionDocuments();
             await this.runPythonScript();
             await this.savePredictionsToMongo();
