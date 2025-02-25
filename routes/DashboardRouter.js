@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'path';
 import Pothole from '../schemas/PredictionSchema.js';
-import { getFileFromBucket } from '../Modules/DatabaseModule/AWSInterface.js';
 
 const router = express.Router();
 const __dirname = path.resolve();
@@ -11,7 +10,7 @@ const confidenceOptions = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
 const labels=  ['curb', 'dash', 'distressed', 'grate', 'manhole', 'marking', 'pothole', 'utility']
 
 
-
+/*
 router.get('/potholeImage/:fileName', async (req, res) => {
   try {
     const { fileName } = req.params;
@@ -37,7 +36,7 @@ router.get('/potholeImage/:fileName', async (req, res) => {
     console.error('Error fetching image:', error);
     res.status(500).json({ message: error.message });
   }
-});
+});*/
 
 router.post('/updateAnnotation', async (req, res) => {
   try {

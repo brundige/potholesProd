@@ -8,9 +8,6 @@ import exifParser from 'exif-parser';
 import icc from 'icc';
 import os from "os";
 import fs from "fs";
-import {deleteMongoPredictions} from "../Modules/DatabaseModule/MongoDBinterface.js";
-import {deleteAllFilesFromBucket} from "../Modules/DatabaseModule/AWSInterface.js";
-import file from "exif-parser/lib/bufferstream.js";   // Updated path
 
 const router = express.Router();
 const storage = multer.memoryStorage();
