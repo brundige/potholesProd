@@ -8,6 +8,18 @@ import exifParser from 'exif-parser';
 import icc from 'icc';
 import os from "os";
 import fs from "fs";
+import AWS from 'aws-sdk';
+
+
+
+// Configure AWS SDK
+AWS.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_KEY,
+    region: process.env.AWS_REGION
+});
+
+
 
 const router = express.Router();
 const storage = multer.memoryStorage();
@@ -153,5 +165,31 @@ router.post('/uploadImages', image_upload, multerErrorHandler, async (req, res) 
     }
 }
 );
+
+router.get('/download-images', async (req, res) => {
+    const bucketName = process.env.AWS_BUCKET_NAME;
+
+    try {
+        const params = {
+            Bucket: bucketName
+        };
+
+        const data = await s3.listObjectsV2(params).promise();
+        const imageKeys = data.Contents.map(item => item.Key);
+
+        const imageUrls = imageKeys.map(key => {
+            return s3.getSignedUrl('getObject', {
+                Bucket: bucketName,
+                Key: key,
+                Expires: 60 * 5 // URL expires in 5 minutes
+            });
+        });
+
+        res.json({ images: imageUrls });
+    } catch (error) {
+        console.error('Error fetching images from S3:', error);
+        res.status(500).json({ error: 'Error fetching images from S3' });
+    }
+});
 
 export default router;
