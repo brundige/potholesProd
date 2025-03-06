@@ -12,15 +12,6 @@ import AWS from 'aws-sdk';
 
 
 
-// Configure AWS SDK
-AWS.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_KEY,
-    region: process.env.AWS_REGION
-});
-
-
-
 const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -51,14 +42,14 @@ const multerErrorHandler = (err, req, res, next) => {
 };
 
 function extractGPSCoordinates(exifData) {
-    const {GPSLatitude, GPSLatitudeRef, GPSLongitude, GPSLongitudeRef} = exifData.tags;
+    const {GPSLatitude, GPSLongitude} = exifData.tags;
 
-    if (!GPSLatitude || !GPSLongitude || !GPSLatitudeRef || !GPSLongitudeRef) {
+    if (!GPSLatitude || !GPSLongitude ) {
         throw new Error('GPS data is missing in the EXIF metadata');
     }
 
-    const latitude = GPSLatitudeRef === 'N' ? GPSLatitude : -GPSLatitude;
-    const longitude = GPSLongitudeRef === 'E' ? GPSLongitude : -GPSLongitude;
+    const latitude = GPSLatitude ;
+    const longitude = GPSLongitude;
     const timestamp = exifData.tags.DateTimeOriginal;
 
     return {
@@ -121,75 +112,49 @@ router.post('/uploadVideo', upload, multerErrorHandler, async (req, res) => {
 });
 
 router.post('/uploadImages', image_upload, multerErrorHandler, async (req, res) => {
-    console.log('Received image files:');
-    try {
-        let imageFiles = req.files.imageFiles;
+        console.log('Received image files:');
+        try {
+            let imageFiles = req.files.imageFiles;
 
-        if (!imageFiles) {
-            return res.status(400).send('No image files uploaded');
-        }
-
-        let coordinates = [];
-        let images = [];
-
-        for (const file of imageFiles) {
-            try {
-                // extract meta data
-                const metadata = await sharp(file.buffer).metadata();
-                const exifData = exifParser.create(file.buffer).parse();
-                const iccProfile = metadata.icc ? icc.parse(metadata.icc) : null;
-
-                console.log('Image metadata:', metadata);
-                console.log('EXIF data:', exifData);
-                console.log('ICC profile:', iccProfile);
-
-                const gpsCoordinates = extractGPSCoordinates(exifData);
-                console.log('GPS coordinates:', gpsCoordinates);
-                coordinates.push(gpsCoordinates);
-                images.push(file.buffer);
-
-            } catch (error) {
-                console.error('Error processing image file:', error);
+            if (!imageFiles) {
+                return res.status(400).send('No image files uploaded');
             }
+
+            let coordinates = [];
+            let images = [];
+
+            for (const file of imageFiles) {
+                try {
+                    // extract meta data
+                    const metadata = await sharp(file.buffer).metadata();
+                    const exifData = exifParser.create(file.buffer).parse();
+                    const iccProfile = metadata.icc ? icc.parse(metadata.icc) : null;
+
+                    console.log('Image metadata:', metadata);
+                    console.log('EXIF data:', exifData);
+                    console.log('ICC profile:', iccProfile);
+
+                    const gpsCoordinates = extractGPSCoordinates(exifData);
+                    console.log('GPS coordinates:', gpsCoordinates);
+                    coordinates.push(gpsCoordinates);
+                    images.push(file.buffer);
+
+                } catch (error) {
+                    console.error('Error processing image file:', error);
+                }
+            }
+
+
+            const apiManager = new APIManager('image', images, JSON.stringify(coordinates));
+            await apiManager.orchestrateInference();
+
+            return res.status(200).send('Image(s) uploaded successfully, processing started...this might take a while');
+        } catch (error) {
+            console.error('Error during image processing:', error);
+            return res.status(500).send('Internal Server Error');
         }
-
-
-
-        const apiManager = new APIManager('image', images, JSON.stringify(coordinates));
-        await apiManager.orchestrateInference();
-
-        return res.status(200).send('Image(s) uploaded successfully, processing started...this might take a while');
-    } catch (error) {
-        console.error('Error during image processing:', error);
-        return res.status(500).send('Internal Server Error');
     }
-}
 );
 
-router.get('/download-images', async (req, res) => {
-    const bucketName = process.env.AWS_BUCKET_NAME;
-
-    try {
-        const params = {
-            Bucket: bucketName
-        };
-
-        const data = await s3.listObjectsV2(params).promise();
-        const imageKeys = data.Contents.map(item => item.Key);
-
-        const imageUrls = imageKeys.map(key => {
-            return s3.getSignedUrl('getObject', {
-                Bucket: bucketName,
-                Key: key,
-                Expires: 60 * 5 // URL expires in 5 minutes
-            });
-        });
-
-        res.json({ images: imageUrls });
-    } catch (error) {
-        console.error('Error fetching images from S3:', error);
-        res.status(500).json({ error: 'Error fetching images from S3' });
-    }
-});
 
 export default router;
