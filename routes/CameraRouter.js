@@ -9,6 +9,7 @@ import icc from 'icc';
 import os from "os";
 import fs from "fs";
 import AWS from 'aws-sdk';
+import {downloadDirectory} from "../Modules/DatabaseModule/AWSInterface.js";
 
 
 
@@ -155,6 +156,24 @@ router.post('/uploadImages', image_upload, multerErrorHandler, async (req, res) 
         }
     }
 );
+router.get('/download', async (req, res) => {
+    const s3 = new AWS.S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    });
+
+    const bucketName = process.env.AWS_BUCKET_NAME;
+    const directory = "stills";
+    const destination = path.join(os.homedir(), 'Downloads');
+
+    try {
+        await downloadDirectory(bucketName, directory, destination);
+        return res.status(200).send('Download complete');
+    } catch (error) {
+        console.error('Error downloading files:', error);
+        return res.status(500).send('Internal Server Error');
+    }
+});
 
 
 export default router;
