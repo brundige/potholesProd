@@ -1,13 +1,17 @@
 import express from 'express';
 import path from 'path';
 import Pothole from '../schemas/PredictionSchema.js';
+import os from "os";
+
+import {downloadDirectory} from "../Modules/DatabaseModule/AWSInterface.js";
+
 
 const router = express.Router();
 const __dirname = path.resolve();
 
 const validOutcomes = ['false_positive', 'true_positive', 'false_negative', 'true_negative', 'unknown'];
-const confidenceOptions = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
-const labels=  ['curb', 'dash', 'distressed', 'grate', 'manhole', 'marking', 'pothole', 'utility']
+//const confidenceOptions = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+//const labels=  ['curb', 'dash', 'distressed', 'grate', 'manhole', 'marking', 'pothole', 'utility']
 
 
 /*
@@ -37,6 +41,10 @@ router.get('/potholeImage/:fileName', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });*/
+export function getLabelNameByClassID(index, labels) {
+  const label = labels.find((lbl) => lbl.label_index === index);
+  return label ? label.label_name : 'Unknown Label';
+}
 
 router.post('/updateAnnotation', async (req, res) => {
   try {
@@ -151,9 +159,40 @@ router.get('/docs', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'API_documentation.html'));
 });
 
-export function getLabelNameByClassID(index, labels) {
-  const label = labels.find((lbl) => lbl.label_index === index);
-  return label ? label.label_name : 'Unknown Label';
-}
+router.get('/download', async (req, res) => {
+  const bucketName = process.env.AWS_BUCKET_NAME;
+  const directory = "stills";
+  const destination = path.join(os.homedir(), 'Downloads');
+
+  try {
+    const downloadedFiles = await downloadDirectory(bucketName, directory, destination);
+    if (downloadedFiles.length === 0) {
+      return res.status(404).send('No files found to download');
+    }
+
+    const zipFilePath = path.join(destination, 'downloaded_files.zip');
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.on('error', (err) => {
+      throw err;
+    });
+
+    res.setHeader('Content-Disposition', 'attachment; filename=downloaded_files.zip');
+    res.setHeader('Content-Type', 'application/zip');
+
+    archive.pipe(res);
+
+    downloadedFiles.forEach((file) => {
+      archive.file(file, { name: path.basename(file) });
+    });
+
+    await archive.finalize();
+  } catch (error) {
+    console.error('Error downloading files:', error);
+    return res.status(500).send('Internal Server Error');
+  }
+});
+
+
 
 export default router;

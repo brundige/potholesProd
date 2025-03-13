@@ -96,25 +96,43 @@ const streamToString = async (stream) => {
 };
 
 const downloadDirectory = async (bucketName, directory, destination) => {
-    const listObjects = await s3Client.send(new ListObjectsV2Command({
-        Bucket: bucketName,
-        Prefix: directory
-    }));
+    const downloadedFiles = [];
+    try {
+        if (!fs.existsSync(destination)) {
+            fs.mkdirSync(destination, { recursive: true });
+        }
 
-    for (const item of listObjects.Contents) {
-        const getObjectParams = {
+        const listObjects = await s3Client.send(new ListObjectsV2Command({
             Bucket: bucketName,
-            Key: item.Key
-        };
-        const data = await s3Client.send(new GetObjectCommand(getObjectParams));
-        const filePath = path.join(destination, path.basename(item.Key));
-        const fileStream = fs.createWriteStream(filePath);
-        await promisify(pipeline)(data.Body, fileStream);
-        console.log(`Downloaded ${item.Key} to ${filePath}`);
+            Prefix: directory
+        }));
+
+        if (!listObjects.Contents) {
+            throw new Error(`No contents found in bucket ${bucketName} with prefix ${directory}`);
+        }
+
+        for (const item of listObjects.Contents) {
+            const getObjectParams = {
+                Bucket: bucketName,
+                Key: item.Key
+            };
+            const data = await s3Client.send(new GetObjectCommand(getObjectParams));
+            const filePath = path.join(destination, path.basename(item.Key));
+            const fileStream = fs.createWriteStream(filePath);
+            await promisify(pipeline)(data.Body, fileStream);
+            downloadedFiles.push(filePath);
+            console.log(`Downloaded ${item.Key} to ${filePath}`);
+        }
+    } catch (error) {
+        console.error('Error downloading directory:', error);
+        throw error;
     }
+    return downloadedFiles;
 };
 
-export {downloadDirectory};
+export { downloadDirectory };
+
+
 
 
 

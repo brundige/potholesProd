@@ -109,25 +109,51 @@
             padding: 10px;
         }
 
-        .reset-view-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            padding: 8px 16px;
-            background-color: #2d2d2d;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+.reset-view-btn {
+    position: absolute;
+    bottom: 20px; /* Change from top to bottom */
+    left: 20px;
+    z-index: 1000;
+    padding: 8px 16px;
+    background-color: #2d2d2d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.reset-view-btn:hover {
+    background-color: #3d3d3d;
+}
+
+        .legend {
+            margin-top: 10px;
         }
 
-        .reset-view-btn:hover {
-            background-color: #3d3d3d;
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .legend-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .legend-color.pothole {
+            background-color: #17a2b8;
+        }
+
+        .legend-color.distressed {
+            background-color: #ffc107;
         }
 
         .outcome-true-positive {
@@ -165,6 +191,7 @@
 <body>
 <div class="dashboard-container">
     <div class="sidebar">
+        <h3> City of Chattanooga</h3>
         <div class="stats-container">
             <div class="stats-heading">
                 Overview
@@ -174,37 +201,33 @@
                 </button>
             </div>
             <div class="stat-item">
+                <span>Last Updated:</span>
+                <span id="lastUpdated">Loading...</span>
+            </div>
+            <div class="stats-heading">Prediction Outcomes</div>
+            <div id="outcomeStats">Loading...</div>
+
+            <div class="stat-item">
                 <span>Total Predictions:</span>
                 <span id="totalPredictions">Loading...</span>
             </div>
             <div class="stat-item">
-                <span>High Confidence (>90%):</span>
-                <span id="highConfidence">Loading...</span>
+                <span>confidence interval:</span>
+                <span id="ci">Loading...</span>
             </div>
-            <div class="stat-item">
-                <span>Last Updated:</span>
-                <span id="lastUpdated">Loading...</span>
-            </div>
+
             <div class="stat-item">
                 <span>Roadway Score:</span>
-                <span id="roadwayScore">Loading...</span>
+                <span id="roadwayScore"> -- not enough data -- </span>
             </div>
 
         </div>
-        <div class="stats-container">
-            <div class="stats-heading">Prediction Outcomes</div>
-            <div id="outcomeStats">Loading...</div>
-        </div>
+
         <div class="stats-container">
             <div class="stats-heading">Latest Detection</div>
             <div id="latestDetection">Loading...</div>
         </div>
-        <div class="stats-container">
-            <div class="stats-heading">Detection Trend</div>
-            <div id="detectionTrend" class="trend-chart">
-                <!-- Trend chart will be rendered here -->
-            </div>
-        </div>
+
     </div>
     <div class="map-container">
         <button class="reset-view-btn" onclick="resetMapView()">
@@ -235,12 +258,14 @@
     }
 
     const outcomeColors = {
-
         pothole: '#17a2b8',
         distressed: '#ffc107',
-
+        // Add other categories here
+        manhole: '#ff5733',
+        utility: '#33ff57',
+        grate: '#3357ff',
+        // Add more categories as needed
     };
-
 
     function getMarkerColor(results) {
         if (!results || results.length === 0) return outcomeColors.unknown;
@@ -252,11 +277,12 @@
     function createPopupContent(prediction) {
         const highestConfidence = Math.max(...prediction.properties.prediction_results.map(p => p.confidence));
         return `
-            <div style="max-width: 200px">
-                <p style="margin: 0 0 8px">${prediction.properties.address}</p>
-                <p style="margin: 0">Confidence: ${(highestConfidence * 100).toFixed(1)}%</p>
-            </div>
-        `;
+        <div style="max-width: 200px">
+            <p style="margin: 0 0 8px">${prediction.properties.address}</p>
+            <p style="margin: 0">Confidence: ${(highestConfidence * 100).toFixed(1)}%</p>
+            <img src="${prediction.properties.image_uri}" alt="Prediction Image" style="width: 100%; margin-top: 10px;">
+        </div>
+    `;
     }
 
     function calculateSegmentLength(coordinates) {
@@ -271,14 +297,14 @@
             const [lat1, lon1] = coordinates[i];
             const [lat2, lon2] = coordinates[i + 1];
 
-            const φ1 = toRadians(lat1);
-            const φ2 = toRadians(lat2);
-            const Δφ = toRadians(lat2 - lat1);
-            const Δλ = toRadians(lon2 - lon1);
+            const phi1 = toRadians(lat1);
+            const phi2 = toRadians(lat2);
+            const deltaPhi = toRadians(lat2 - lat1);
+            const deltaLambda = toRadians(lon2 - lon1);
 
-            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                Math.cos(phi1) * Math.cos(phi2) *
+                Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
             const distance = R * c;
@@ -313,11 +339,23 @@
             // Clear existing markers
             markers.clearLayers();
 
+            // Filter out duplicates based on location
+            const uniqueData = [];
+            const seenLocations = new Set();
+
+            data.forEach(prediction => {
+                const locationKey = `${prediction.geometry.coordinates[0]},${prediction.geometry.coordinates[1]}`;
+                if (!seenLocations.has(locationKey)) {
+                    seenLocations.add(locationKey);
+                    uniqueData.push(prediction);
+                }
+            });
+
             // Update statistics
-            updateDashboardStats(data);
+            updateDashboardStats(uniqueData);
 
             // Add markers to map
-            data.forEach(prediction => {
+            uniqueData.forEach(prediction => {
                 const [lng, lat] = prediction.geometry.coordinates;
                 const highestConfidence = Math.max(...prediction.properties.prediction_results.map(p => p.confidence));
 
@@ -332,16 +370,34 @@
                 markers.addLayer(marker);
             });
 
-            if (data.length > 0) {
+            // Add white dot markers for images without predictions
+            data.forEach(prediction => {
+                if (prediction.properties.prediction_results.length === 0) {
+                    const [lng, lat] = prediction.geometry.coordinates;
+                    const marker = L.circle([lat, lng], {
+                        color: '#ffffff',
+                        fillColor: '#ffffff',
+                        fillOpacity: 1,
+                        radius: 3
+                    });
+
+                    marker.bindPopup('<div style="max-width: 200px"><p style="margin: 0 0 8px">No predictions</p></div>');
+                    markers.addLayer(marker);
+                }
+            });
+
+            if (uniqueData.length > 0) {
                 const group = L.featureGroup(markers.getLayers());
                 map.fitBounds(group.getBounds());
             }
 
             // Calculate and update roadway score
-            document.getElementById('roadwayScore').textContent = calcRoadwayScore(data.map(prediction => ({
+            const roadSegments = uniqueData.map(prediction => ({
                 features: prediction.properties.prediction_results,
                 coordinates: prediction.geometry.coordinates
-            })));
+            }));
+            const roadwayScore = calcRoadwayScore(roadSegments);
+            document.getElementById('roadwayScore').textContent = roadwayScore;
 
         } catch (error) {
             console.error('Error fetching prediction data:', error);
@@ -350,57 +406,63 @@
         }
     }
 
+function updateDashboardStats(data) {
+    document.getElementById('totalPredictions').textContent = data.reduce((sum, pred) =>
+        sum + pred.properties.prediction_results.length, 0);
 
-    function updateDashboardStats(data) {
-        const totalPredictions = data.reduce((sum, pred) =>
-            sum + pred.properties.prediction_results.length, 0);
-        document.getElementById('totalPredictions').textContent = totalPredictions;
+    const confidences = data.flatMap(pred => pred.properties.prediction_results.map(p => p.confidence));
+    confidences.sort((a, b) => a - b);
+    const medianConfidence = confidences.length % 2 === 0
+        ? (confidences[confidences.length / 2 - 1] + confidences[confidences.length / 2]) / 2
+        : confidences[Math.floor(confidences.length / 2)];
+    document.getElementById('ci').textContent = medianConfidence.toFixed(2);
 
-        const highConfidence = data.reduce((sum, pred) =>
-            sum + pred.properties.prediction_results.filter(p => p.confidence > 0.9).length, 0);
-        document.getElementById('highConfidence').textContent = highConfidence;
+    document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
 
-        document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+    const outcomes = data.reduce((acc, pred) => {
+        pred.properties.prediction_results.forEach(p => {
+            acc[p.label_id] = (acc[p.label_id] || 0) + 1;
+        });
+        return acc;
+    }, {});
 
-        const outcomes = data.reduce((acc, pred) => {
-            pred.properties.prediction_results.forEach(p => {
-                acc[p.label_id] = (acc[p.label_id] || 0) + 1;
-            });
-            return acc;
-        }, {});
+    const outcomeHTML = Object.entries(outcomes)
+        .map(([outcome, count]) => `
+        <div class="stat-item">
+            <span class="outcome-tag outcome-${outcome}" style="background-color: ${outcomeColors[outcome] || '#6c757d'};">
+                ${outcome.replace('_', ' ')}
+            </span>
+            <span>${count}</span>
+        </div>
+    `).join('');
 
-        const outcomeHTML = Object.entries(outcomes)
-            .map(([outcome, count]) => `
-                <div class="stat-item">
-                    <span class="outcome-tag outcome-${outcome}">${outcome.replace('_', ' ')}</span>
-                    <span>${count}</span>
-                </div>
-            `).join('');
+    document.getElementById('outcomeStats').innerHTML = outcomeHTML;
 
-        document.getElementById('outcomeStats').innerHTML = outcomeHTML;
+    if (data.length > 0) {
+        const latest = data.reduce((prev, current) =>
+            new Date(current.created_at) > new Date(prev.created_at) ? current : prev
+        );
 
-        if (data.length > 0) {
-            const latest = data.reduce((prev, current) =>
-                new Date(current.created_at) > new Date(prev.created_at) ? current : prev
-            );
+        const address = latest.properties.address;
+        const streetAddress = address.match(/^\d+\s+\D+/)[0];
 
-            const latestHTML = `
-                <div class="stat-item">
-                    <span>Address:</span>
-                    <span>${latest.properties.address}</span>
-                </div>
-                <div class="stat-item">
-                    <span>Confidence:</span>
-                    <div class="confidence-bar">
-                        <div class="confidence-fill" style="width: ${Math.max(...latest.properties.prediction_results.map(p => p.confidence * 100))}%"></div>
-                    </div>
-                </div>
-                <img src="${latest.properties.image_uri}" class="image-preview" alt="Latest detection">
-            `;
+        const latestHTML = `
+        <div class="stat-item">
+            <span>Address:</span>
+            <span>${streetAddress}</span>
+        </div>
+        <div class="stat-item">
+            <span>Confidence:</span>
+            <div class="confidence-bar">
+                <div class="confidence-fill" style="width: ${Math.max(...latest.properties.prediction_results.map(p => p.confidence * 100))}%"></div>
+            </div>
+        </div>
 
-            document.getElementById('latestDetection').innerHTML = latestHTML;
-        }
+    `;
+
+        document.getElementById('latestDetection').innerHTML = latestHTML;
     }
+}
 
     // Initial fetch
     fetchPredictionData();
