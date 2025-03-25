@@ -162,7 +162,7 @@ router.get('/docs', (req, res) => {
 router.get('/download', async (req, res) => {
   const bucketName = process.env.AWS_BUCKET_NAME;
   const directory = "stills";
-  const destination = downloadPath;
+  const destination = path.join(os.homedir(), 'RawImages');
 
   try {
     const downloadedFiles = await downloadDirectory(bucketName, directory, destination);
