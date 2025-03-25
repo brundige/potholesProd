@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 9
+names: ['curb', 'dash', 'distressed', 'grate', 'manhole', 'marking', 'pothole', 'trees', 'utility']
+
+roboflow:
+  workspace: jerry-cooper-tlzkx
+  project: pothole_detection_chatt_only
+  version: 17
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/jerry-cooper-tlzkx/pothole_detection_chatt_only/dataset/17

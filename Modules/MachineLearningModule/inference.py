@@ -7,15 +7,17 @@ from ultralytics import YOLO
 def inference(source_images, output_dir):
     print(f"Running inference on: {source_images} from python script")
     os.makedirs(output_dir, exist_ok=True)
-    model = YOLO('Modules/MachineLearningModule/models/11n_eleven_thirteen_150epochs.pt', task='detect')
+    model = YOLO('Modules/MachineLearningModule/models/v17_Chatt_only_800__aspect_expandedDataset_yolo11x.pt',
+                 task='detect')
 
-    # Load the best hyperparameters from the YAML file
-    with open(
-            "C:\\Users\\chrisb\\chattanooga_test\\potholes_machine_learning\\model_builder\\runs\\detect\\tune\\best_hyperparameters.yaml",
-            'r') as file:
-        best_hyperparameters = yaml.load(file, Loader=yaml.FullLoader)
+    # Load the best hyperparameters from the YAML file  -- todo: perfrom hyperparameter tuning
 
-    model.overrides.update(best_hyperparameters)
+    #    with open(
+    #            "C:\\Users\\chrisb\\chattanooga_test\\potholes_machine_learning\\model_builder\\runs\\detect\\tune\\best_hyperparameters.yaml",
+    #           'r') as file:
+    #       best_hyperparameters = yaml.load(file, Loader=yaml.FullLoader)
+
+    #    model.overrides.update(best_hyperparameters)
 
     results = model.predict(
         source=source_images,
@@ -28,9 +30,10 @@ def inference(source_images, output_dir):
         show_labels=True,
         save_txt=True,
         save_conf=True,
+        imgsz=800,
         conf=0.3,
         device='cuda:0',
-        project= output_dir,
+        project=output_dir,
         name='predictions'
 
     )
