@@ -10,7 +10,8 @@ services:
       MONGO_URI: mongodb://mongo:27017/test
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: all
-
+    volumes:
+      - ./host_downloads:/root/RawImages # This is the path to the host directory
     depends_on:
       - mongo
     networks:
