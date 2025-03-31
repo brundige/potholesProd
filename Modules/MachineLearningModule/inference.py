@@ -12,35 +12,35 @@ def inference(source_images, output_dir):
 
     # Load the best hyperparameters from the YAML file  -- todo: perfrom hyperparameter tuning
 
-    #    with open(
-    #            "C:\\Users\\chrisb\\chattanooga_test\\potholes_machine_learning\\model_builder\\runs\\detect\\tune\\best_hyperparameters.yaml",
-    #           'r') as file:
-    #       best_hyperparameters = yaml.load(file, Loader=yaml.FullLoader)
+    with open(
+            "C:\\Users\\chrisb\\chattanooga_test\\potholes_machine_learning\\model_builder\\runs\\detect\\tune\\best_hyperparameters.yaml",
+            'r') as file:
+        best_hyperparameters = yaml.load(file, Loader=yaml.FullLoader)
 
-    #    model.overrides.update(best_hyperparameters)
+    model.overrides.update(best_hyperparameters)
 
-    results = model.predict(
-        source=source_images,
-        vid_stride=12,
-        show=True,
-        classes=[2, 4, 6],
-        save=True,
-        stream=False,
-        save_frames=True,
-        show_labels=True,
-        save_txt=True,
-        save_conf=True,
-       # imgsz=800,
-        conf=0.3,
-        device='cuda:0',
-        project=output_dir,
-        name='predictions'
 
-    )
+results = model.predict(
+    source=source_images,
+    vid_stride=12,
+    show=True,
+    classes=[2, 4, 6],
+    save=True,
+    stream=False,
+    save_frames=True,
+    show_labels=True,
+    save_txt=True,
+    save_conf=True,
+    # imgsz=800,
+    conf=0.3,
+    device='cuda:0',
+    project=output_dir,
+    name='predictions'
 
-    for result in results:
-        print(result)
+)
 
+for result in results:
+    print(result)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run inference on a directory of images.')
