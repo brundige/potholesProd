@@ -30,7 +30,7 @@ def inference(source_images, output_dir):
         show_labels=True,
         save_txt=True,
         save_conf=True,
-        imgsz=800,
+       # imgsz=800,
         conf=0.3,
         device='cuda:0',
         project=output_dir,

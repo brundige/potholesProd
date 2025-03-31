@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 
 class GeoLocateClass {
@@ -27,3 +28,5 @@ class GeoLocateClass {
 }
 
 export default GeoLocateClass;
+
+
