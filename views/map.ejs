@@ -364,7 +364,7 @@ function updateDashboardStats(data) {
         return acc;
     }, {});
 
-    const outcomeHTML = Object.entries(outcomes)
+    document.getElementById('outcomeStats').innerHTML = Object.entries(outcomes)
         .map(([outcome, count]) => `
         <div class="stat-item">
             <span class="outcome-tag outcome-${outcome}" style="background-color: ${outcomeColors[outcome] || '#6c757d'};">
@@ -374,8 +374,6 @@ function updateDashboardStats(data) {
         </div>
     `).join('');
 
-    document.getElementById('outcomeStats').innerHTML = outcomeHTML;
-
     if (data.length > 0) {
         const latest = data.reduce((prev, current) =>
             new Date(current.created_at) > new Date(prev.created_at) ? current : prev
@@ -384,7 +382,7 @@ function updateDashboardStats(data) {
         const address = latest.properties.address;
         const streetAddress = address.match(/^\d+\s+\D+/)[0];
 
-        const latestHTML = `
+        document.getElementById('latestDetection').innerHTML = `
         <div class="stat-item">
             <span>Address:</span>
             <span>${streetAddress}</span>
@@ -397,8 +395,6 @@ function updateDashboardStats(data) {
         </div>
 
     `;
-
-        document.getElementById('latestDetection').innerHTML = latestHTML;
     }
 }
 
