@@ -23,10 +23,6 @@ const port = 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/test';
 //const MONGO_URI = 'mongodb://10.21.6.131:27017'
 
-// Connect to MongoDB
-mongoose.connect(MONGO_URI)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('Could not connect to MongoDB', err));
 
 
 
@@ -49,7 +45,6 @@ app.use('/api', DashboardRouter);
 app.get('/', (req, res) => res.render('index', { title: 'Express' }));
 
 
-
 // Error handling
 app.use((req, res, next) => {
   next(createError(404));
@@ -62,18 +57,10 @@ app.use((err, req, res, next) => {
   res.render('error');
 });
 
-
-// HTTPS redirect middleware
-app.use((req, res, next) => {
-  if (req.secure) {
-    // Request was via https
-    next();
-  } else {
-    // Redirect to https
-    res.redirect(`https://${req.headers.host}${req.url}`);
-  }
-});
-
+// Connect to MongoDB
+mongoose.connect(MONGO_URI)
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('Could not connect to MongoDB', err));
 
 // Start the server
 app.listen(port, () => {

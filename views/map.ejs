@@ -333,10 +333,72 @@
     async function fetchPredictionData() {
         try {
             document.querySelector('.refresh-button').classList.add('loading');
-            const response = await fetch('https://' + window.location.hostname + '/api/potholes');
+            const response = await fetch('/api/potholes');
             const data = await response.json();
 
-            // Rest of your fetch function...
+            // Clear existing markers
+            markers.clearLayers();
+
+            // Filter out duplicates based on location
+            const uniqueData = [];
+            const seenLocations = new Set();
+
+            data.forEach(prediction => {
+                const locationKey = `${prediction.geometry.coordinates[0]},${prediction.geometry.coordinates[1]}`;
+                if (!seenLocations.has(locationKey)) {
+                    seenLocations.add(locationKey);
+                    uniqueData.push(prediction);
+                }
+            });
+
+            // Update statistics
+            updateDashboardStats(uniqueData);
+
+            // Add markers to map
+            uniqueData.forEach(prediction => {
+                const [lng, lat] = prediction.geometry.coordinates;
+                const highestConfidence = Math.max(...prediction.properties.prediction_results.map(p => p.confidence));
+
+                const marker = L.circle([lat, lng], {
+                    color: getMarkerColor(prediction.properties.prediction_results),
+                    fillColor: getMarkerColor(prediction.properties.prediction_results),
+                    fillOpacity: 1,
+                    radius: 3
+                });
+
+                marker.bindPopup(createPopupContent(prediction));
+                markers.addLayer(marker);
+            });
+
+            // Add white dot markers for images without predictions
+            data.forEach(prediction => {
+                if (prediction.properties.prediction_results.length === 0) {
+                    const [lng, lat] = prediction.geometry.coordinates;
+                    const marker = L.circle([lat, lng], {
+                        color: '#ffffff',
+                        fillColor: '#ffffff',
+                        fillOpacity: 1,
+                        radius: 3
+                    });
+
+                    marker.bindPopup('<div style="max-width: 200px"><p style="margin: 0 0 8px">No predictions</p></div>');
+                    markers.addLayer(marker);
+                }
+            });
+
+            if (uniqueData.length > 0) {
+                const group = L.featureGroup(markers.getLayers());
+                map.fitBounds(group.getBounds());
+            }
+
+            // Calculate and update roadway score
+            const roadSegments = uniqueData.map(prediction => ({
+                features: prediction.properties.prediction_results,
+                coordinates: prediction.geometry.coordinates
+            }));
+            const roadwayScore = calcRoadwayScore(roadSegments);
+            document.getElementById('roadwayScore').textContent = roadwayScore;
+
         } catch (error) {
             console.error('Error fetching prediction data:', error);
         } finally {
@@ -364,7 +426,7 @@ function updateDashboardStats(data) {
         return acc;
     }, {});
 
-    document.getElementById('outcomeStats').innerHTML = Object.entries(outcomes)
+    const outcomeHTML = Object.entries(outcomes)
         .map(([outcome, count]) => `
         <div class="stat-item">
             <span class="outcome-tag outcome-${outcome}" style="background-color: ${outcomeColors[outcome] || '#6c757d'};">
@@ -374,6 +436,8 @@ function updateDashboardStats(data) {
         </div>
     `).join('');
 
+    document.getElementById('outcomeStats').innerHTML = outcomeHTML;
+
     if (data.length > 0) {
         const latest = data.reduce((prev, current) =>
             new Date(current.created_at) > new Date(prev.created_at) ? current : prev
@@ -382,7 +446,7 @@ function updateDashboardStats(data) {
         const address = latest.properties.address;
         const streetAddress = address.match(/^\d+\s+\D+/)[0];
 
-        document.getElementById('latestDetection').innerHTML = `
+        const latestHTML = `
         <div class="stat-item">
             <span>Address:</span>
             <span>${streetAddress}</span>
@@ -395,6 +459,8 @@ function updateDashboardStats(data) {
         </div>
 
     `;
+
+        document.getElementById('latestDetection').innerHTML = latestHTML;
     }
 }
 
