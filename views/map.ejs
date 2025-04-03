@@ -109,26 +109,26 @@
             padding: 10px;
         }
 
-.reset-view-btn {
-    position: absolute;
-    bottom: 20px; /* Change from top to bottom */
-    left: 20px;
-    z-index: 1000;
-    padding: 8px 16px;
-    background-color: #2d2d2d;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
+        .reset-view-btn {
+            position: absolute;
+            bottom: 20px; /* Change from top to bottom */
+            left: 20px;
+            z-index: 1000;
+            padding: 8px 16px;
+            background-color: #2d2d2d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
 
-.reset-view-btn:hover {
-    background-color: #3d3d3d;
-}
+        .reset-view-btn:hover {
+            background-color: #3d3d3d;
+        }
 
         .legend {
             margin-top: 10px;
@@ -260,18 +260,19 @@
     const outcomeColors = {
         pothole: '#17a2b8',
         distressed: '#ffc107',
-        // Add other categories here
         manhole: '#ff5733',
         utility: '#33ff57',
-        grate: '#3357ff',
-        // Add more categories as needed
+        grate: '#3357ff'
     };
 
     function getMarkerColor(results) {
-        if (!results || results.length === 0) return outcomeColors.unknown;
+        if (!results || results.length === 0) return '#6c757d'; // gray for unknown
+
         const highestConfidence = Math.max(...results.map(r => r.confidence));
         const result = results.find(r => r.confidence === highestConfidence);
-        return outcomeColors[result.label_id] || outcomeColors.unknown;
+
+        // Return color from outcomeColors using the label_id
+        return outcomeColors[result.label_id] || '#6c757d';
     }
 
     function createPopupContent(prediction) {
@@ -406,28 +407,34 @@
         }
     }
 
-function updateDashboardStats(data) {
-    document.getElementById('totalPredictions').textContent = data.reduce((sum, pred) =>
-        sum + pred.properties.prediction_results.length, 0);
+    function updateDashboardStats(data) {
+        document.getElementById('totalPredictions').textContent = data.reduce((sum, pred) =>
+            sum + pred.properties.prediction_results.length, 0);
 
-    const confidences = data.flatMap(pred => pred.properties.prediction_results.map(p => p.confidence));
-    confidences.sort((a, b) => a - b);
-    const medianConfidence = confidences.length % 2 === 0
-        ? (confidences[confidences.length / 2 - 1] + confidences[confidences.length / 2]) / 2
-        : confidences[Math.floor(confidences.length / 2)];
-    document.getElementById('ci').textContent = medianConfidence.toFixed(2);
+        const confidences = data.flatMap(pred => pred.properties.prediction_results.map(p => p.confidence));
 
-    document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+        // Handle empty confidences array
+        if (confidences.length > 0) {
+            confidences.sort((a, b) => a - b);
+            const medianConfidence = confidences.length % 2 === 0
+                ? (confidences[confidences.length / 2 - 1] + confidences[confidences.length / 2]) / 2
+                : confidences[Math.floor(confidences.length / 2)];
+            document.getElementById('ci').textContent = medianConfidence.toFixed(2);
+        } else {
+            document.getElementById('ci').textContent = "No data";
+        }
 
-    const outcomes = data.reduce((acc, pred) => {
-        pred.properties.prediction_results.forEach(p => {
-            acc[p.label_id] = (acc[p.label_id] || 0) + 1;
-        });
-        return acc;
-    }, {});
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
 
-    const outcomeHTML = Object.entries(outcomes)
-        .map(([outcome, count]) => `
+        const outcomes = data.reduce((acc, pred) => {
+            pred.properties.prediction_results.forEach(p => {
+                acc[p.label_id] = (acc[p.label_id] || 0) + 1;
+            });
+            return acc;
+        }, {});
+
+        const outcomeHTML = Object.entries(outcomes)
+            .map(([outcome, count]) => `
         <div class="stat-item">
             <span class="outcome-tag outcome-${outcome}" style="background-color: ${outcomeColors[outcome] || '#6c757d'};">
                 ${outcome.replace('_', ' ')}
@@ -436,33 +443,47 @@ function updateDashboardStats(data) {
         </div>
     `).join('');
 
-    document.getElementById('outcomeStats').innerHTML = outcomeHTML;
+        document.getElementById('outcomeStats').innerHTML = outcomeHTML || "No predictions found";
 
-    if (data.length > 0) {
-        const latest = data.reduce((prev, current) =>
-            new Date(current.created_at) > new Date(prev.created_at) ? current : prev
-        );
+        if (data.length > 0) {
+            const latest = data.reduce((prev, current) =>
+                new Date(current.created_at) > new Date(prev.created_at) ? current : prev
+            );
 
-        const address = latest.properties.address;
-        const streetAddress = address.match(/^\d+\s+\D+/)[0];
+            const address = latest.properties.address || "Address unknown";
+            let streetAddress = address;
 
-        const latestHTML = `
+            // Safely extract street address if possible
+            const addressMatch = address.match(/^\d+\s+\D+/);
+            if (addressMatch && addressMatch[0]) {
+                streetAddress = addressMatch[0];
+            }
+
+            const latestHTML = `
         <div class="stat-item">
             <span>Address:</span>
             <span>${streetAddress}</span>
-        </div>
-        <div class="stat-item">
-            <span>Confidence:</span>
-            <div class="confidence-bar">
-                <div class="confidence-fill" style="width: ${Math.max(...latest.properties.prediction_results.map(p => p.confidence * 100))}%"></div>
-            </div>
-        </div>
+        </div>`;
 
-    `;
-
-        document.getElementById('latestDetection').innerHTML = latestHTML;
+            // Only add confidence bar if there are prediction results
+            if (latest.properties.prediction_results && latest.properties.prediction_results.length > 0) {
+                const maxConfidence = Math.max(...latest.properties.prediction_results.map(p => p.confidence * 100));
+                const confidenceBar = `
+            <div class="stat-item">
+                <span>Confidence:</span>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" style="width: ${maxConfidence}%"></div>
+                </div>
+            </div>`;
+                document.getElementById('latestDetection').innerHTML = latestHTML + confidenceBar;
+            } else {
+                document.getElementById('latestDetection').innerHTML = latestHTML +
+                    '<div class="stat-item"><span>Confidence:</span><span>No predictions</span></div>';
+            }
+        } else {
+            document.getElementById('latestDetection').innerHTML = "No data available";
+        }
     }
-}
 
     // Initial fetch
     fetchPredictionData();
