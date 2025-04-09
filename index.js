@@ -20,7 +20,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 const port = 3000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/test';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/ESRI';
 //const MONGO_URI = 'mongodb://10.21.6.131:27017'
 
 
