@@ -3,12 +3,13 @@
 import {spawn} from 'child_process';
 import fs from 'fs';
 import VideoManager from '../CameraModule/VideoManager.js';
-import GeoLocateClass from '../GeolocateModule/GeoLocateClass.js';
+
 import Prediction from '../../schemas/PredictionSchema.js';
-import {getLabelNameByClassID} from '../../routes/DashboardRouter.js';
+
 import ImageManager from '../CameraModule/ImageManager.js';
 import annotationLabelsModel from "../../schemas/annotationLabelsSchema.js";
 import {uploadFilesToBucket} from "../DatabaseModule/AWSInterface.js";
+import EsriGeolocator from "../GeolocateModule/ESRI.js";
 
 /**
  * Class representing an APIManager.
@@ -58,7 +59,7 @@ class APIManager {
      * @return {Promise<void>} A promise that resolves when documents are created.
      */
     async createInitialPredictionDocuments() {
-        const locator = new GeoLocateClass();
+        const locator = new EsriGeolocator();
         const files = fs.readdirSync(this.stills);
 
         for (const file of files) {
