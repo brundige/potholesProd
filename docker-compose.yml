@@ -1,4 +1,3 @@
-
 services:
   app:
     restart: always
@@ -9,13 +8,26 @@ services:
       MONGO_URI: mongodb://mongo:27017/test
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: all
+      OSRM_URL: http://osrm:5000
     volumes:
-      - ./host_downloads:/root/RawImages # This is the path to the host directory
+      - ./host_downloads:/root/RawImages
     depends_on:
       - mongo
+      - osrm
     networks:
       - app-network
 
+  osrm:
+    restart: always
+    image: osrm/osrm-backend
+    container_name: osrm
+    volumes:
+      - ./osrm-data:/data
+    ports:
+      - "5000:5000"
+    command: osrm-routed --algorithm mld /data/tennessee-latest.osrm
+    networks:
+      - app-network
 
   mongo:
     restart: always
@@ -29,17 +41,6 @@ services:
       - mongo-data:/data/db
     networks:
       - app-network
-
-
-  osrm:
-    image: osrm/osrm-backend
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./osrm-data:/data
-    command: osrm-routed --algorithm mld /data/tennessee-latest.osrm
-
-
 
 volumes:
   mongo-data:

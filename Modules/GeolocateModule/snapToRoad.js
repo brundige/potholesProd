@@ -1,7 +1,11 @@
 import mongoose from 'mongoose';
 import Pothole from "../../schemas/PredictionSchema.js";
+import dotenv from 'dotenv';
 
-const OSRM_ENDPOINT = 'http://localhost:5000'; // Your OSRM server endpoint
+dotenv.config(); // Load environment variables
+
+// Use the OSRM_URL environment variable
+const OSRM_ENDPOINT = process.env.OSRM_URL || 'http://osrm:5000'; // Fallback to default if not set
 
 // Function to snap a single point to the nearest road
 async function snapToRoad(lat, lng) {
@@ -23,12 +27,9 @@ async function snapToRoad(lat, lng) {
     }
 }
 
-// Function to adjust points in the database - REMOVED separate connection management
+// Function to adjust points in the database
 async function adjustDatabasePoints() {
     try {
-        // REMOVED: mongoose.connect() - We use the existing connection from index.js
-
-        // Fetch all predictions
         const predictions = await Pothole.find();
         console.log(`Found ${predictions.length} predictions to adjust`);
 
@@ -48,9 +49,8 @@ async function adjustDatabasePoints() {
         console.log('All points adjusted successfully.');
     } catch (error) {
         console.error('Error adjusting database points:', error.message || error);
-        throw error; // Rethrow to handle in the calling code
+        throw error;
     }
-    // REMOVED: mongoose.connection.close() - Don't close the main app connection
 }
 
 export {adjustDatabasePoints};
