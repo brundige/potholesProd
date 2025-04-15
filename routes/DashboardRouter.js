@@ -131,6 +131,33 @@ router.get('/potholes', async (req, res) => {
   }
 });
 
+// New CSV export endpoint
+router.get('/potholes/csv', async (req, res) => {
+  try {
+    const potholes = await Pothole.find();
+
+    // Create CSV header based on your data structure
+    let csv = 'id,latitude,longitude,confidence,timestamp,address\n';
+
+    // Add each pothole as a row in the CSV
+    potholes.forEach(pothole => {
+      const [lng, lat] = pothole.geometry.coordinates;
+      csv += `${pothole._id},${lat},${lng},${pothole.properties.confidence || ''},${pothole.properties.timestamp || ''},${(pothole.properties.address || '').replace(/,/g, ' ')}\n`;
+    });
+
+    // Set headers for CSV download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=potholes.csv');
+
+    // Send CSV data
+    res.send(csv);
+  } catch (error) {
+    console.error('Error generating CSV:', error);
+    res.status(500).send('Error generating CSV');
+  }
+});
+
+
 router.get('/potholes/:id', async (req, res) => {
   try {
     const pothole = await Pothole.findById(req.params.id);
@@ -143,6 +170,11 @@ router.get('/potholes/:id', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+
+
+// Your existing routes...
+
 
 router.get('/potholes/street/:streetName', async (req, res) => {
   try {
