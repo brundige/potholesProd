@@ -5,293 +5,256 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pothole Detection Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #1a1a1a;
-            color: #ffffff;
-            font-family: Arial, sans-serif;
-        }
-
-        .dashboard-container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            height: 100vh;
-        }
-
-        .sidebar {
-            padding: 20px;
-            background-color: #2d2d2d;
-            overflow-y: auto;
-        }
-
-        .stats-container {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #3d3d3d;
-            border-radius: 8px;
-        }
-
-        .map-container {
-            height: 100%;
-            position: relative;
-        }
-
-        #map {
-            height: 100%;
-            width: 100%;
-        }
-
-        .stats-heading {
-            font-size: 1.2em;
-            margin-bottom: 10px;
-            color: #4a9eff;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .refresh-button {
-            background: none;
-            border: none;
-            color: #4a9eff;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 50%;
-            transition: background-color 0.3s;
-        }
-
-        .refresh-button:hover {
-            background-color: #4a9eff33;
-        }
-
-        .stat-item {
-            margin: 10px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .confidence-bar {
-            width: 100px;
-            height: 8px;
-            background: #2d2d2d;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .confidence-fill {
-            height: 100%;
-            background: #4a9eff;
-            transition: width 0.3s ease;
-        }
-
-        .image-preview {
-            max-width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 4px;
-            margin-top: 10px;
-        }
-
-        .outcome-tag {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.9em;
-        }
-
-        .trend-chart {
-            height: 200px;
-            margin-top: 15px;
-            background-color: #3d3d3d;
-            border-radius: 4px;
-            padding: 10px;
-        }
-
-        .reset-view-btn {
-            position: absolute;
-            bottom: 20px; /* Change from top to bottom */
-            left: 20px;
-            z-index: 1000;
-            padding: 8px 16px;
-            background-color: #2d2d2d;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .reset-view-btn:hover {
-            background-color: #3d3d3d;
-        }
-
-        .legend {
-            margin-top: 10px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-
-        .legend-color {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-
-        .legend-color.pothole {
-            background-color: #17a2b8;
-        }
-
-        .legend-color.distressed {
-            background-color: #ffc107;
-        }
-
-        .outcome-true-positive {
-            background-color: #28a745;
-        }
-
-        .outcome-false-positive {
-            background-color: #dc3545;
-        }
-
-        .outcome-true-negative {
-            background-color: #17a2b8;
-        }
-
-        .outcome-false-negative {
-            background-color: #ffc107;
-            color: #000;
-        }
-
-        .outcome-unknown {
-            background-color: #6c757d;
-        }
-
-        .loading-indicator {
-            display: none;
-            margin-left: 10px;
-            color: #4a9eff;
-        }
-
-        .loading .loading-indicator {
-            display: inline;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/map.css"/>
 </head>
 <body>
 <div class="dashboard-container">
     <div class="sidebar">
-        <h3> City of Chattanooga</h3>
         <div class="stats-container">
-            <div class="stats-heading">
-                Overview
-                <button onclick="fetchPredictionData()" class="refresh-button">
-                    ↻
+            <div class="stats-heading">Dashboard
+                <button class="refresh-button" onclick="fetchPredictionData()">
+                    <i class="fas fa-sync-alt"></i>
                     <span class="loading-indicator">Loading...</span>
                 </button>
             </div>
             <div class="stat-item">
-                <span>Last Updated:</span>
-                <span id="lastUpdated">Loading...</span>
-            </div>
-            <div class="stats-heading">Prediction Outcomes</div>
-            <div id="outcomeStats">Loading...</div>
-
-            <div class="stat-item">
                 <span>Total Predictions:</span>
-                <span id="totalPredictions">Loading...</span>
+                <span id="totalPredictions">0</span>
             </div>
             <div class="stat-item">
-                <span>confidence interval:</span>
-                <span id="ci">Loading...</span>
+                <span>Confidence Index:</span>
+                <span id="ci">0</span>
             </div>
-
             <div class="stat-item">
                 <span>Roadway Score:</span>
-                <span id="roadwayScore"> -- not enough data -- </span>
+                <span id="roadwayScore">0</span>
             </div>
+            <div class="stat-item">
+                <span>Last Updated:</span>
+                <span id="lastUpdated">-</span>
+            </div>
+        </div>
 
+        <div class="stats-container">
+            <div class="stats-heading">Map Filters</div>
+            <div class="filter-item">
+                <label class="toggle-label">
+                    <input type="checkbox" id="showNoDetections" checked>
+                    <span class="toggle-text">Show Locations Without Predictions</span>
+                </label>
+            </div>
+            <div class="stats-heading">Prediction Types</div>
+            <div id="predictionTypeFilters">
+                <!-- Will be populated dynamically -->
+            </div>
         </div>
 
         <div class="stats-container">
             <div class="stats-heading">Latest Detection</div>
-            <div id="latestDetection">Loading...</div>
+            <div id="latestDetection">No data available</div>
         </div>
 
+        <div class="stats-container">
+            <div class="stats-heading">Prediction Types</div>
+            <div id="outcomeStats">No predictions found</div>
+        </div>
+
+        <div class="stats-container">
+            <div class="stats-heading">Legend</div>
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="legend-color pothole"></span>
+                    <span>Pothole</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color distressed"></span>
+                    <span>Distressed Road</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background-color: #ffffff;"></span>
+                    <span>No Predictions</span>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="map-container">
-        <button class="reset-view-btn" onclick="resetMapView()">
-            🏠 Reset View
-        </button>
         <div id="map"></div>
+        <button class="reset-view-btn" onclick="resetMapView()">
+            <i class="fas fa-expand-arrows-alt"></i> Reset View
+        </button>
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 <script>
-    // Chattanooga, TN coordinates
-    const CHATTANOOGA_LAT = 35.0456;
-    const CHATTANOOGA_LNG = -85.3097;
-    const DEFAULT_ZOOM = 12;
-
-    // Initialize map with Chattanooga center
-    const map = L.map('map').setView([CHATTANOOGA_LAT, CHATTANOOGA_LNG], DEFAULT_ZOOM);
+    // Initialize map
+    const map = L.map('map').setView([35.0456, -85.3097], 13);
+    // With this dark theme
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
     }).addTo(map);
 
-    // Create markers group
+    // Container for all markers
     const markers = L.layerGroup().addTo(map);
 
-    function resetMapView() {
-        map.setView([CHATTANOOGA_LAT, CHATTANOOGA_LNG], DEFAULT_ZOOM);
-    }
-
+    // Colors for different prediction types
     const outcomeColors = {
-        pothole: '#17a2b8',
-        distressed: '#ffc107',
-        manhole: '#ff5733',
-        utility: '#33ff57',
-        grate: '#3357ff'
+        'pothole': '#17a2b8',
+        'distressed': '#ffc107',
+        'crack': '#dc3545',
+        'normal': '#28a745'
     };
 
-    function getMarkerColor(results) {
-        if (!results || results.length === 0) return '#6c757d'; // gray for unknown
+    // Add these variables for filtering
+    let filterSettings = {
+        showNoDetections: true,
+        predictionTypes: {}
+    };
 
-        const highestConfidence = Math.max(...results.map(r => r.confidence));
+    // Initialize filters with all types checked by default
+    Object.keys(outcomeColors).forEach(type => {
+        filterSettings.predictionTypes[type] = true;
+    });
+
+    // Create filter UI
+    function createFilterUI() {
+        const container = document.getElementById('predictionTypeFilters');
+        container.innerHTML = '';
+
+        Object.entries(outcomeColors).forEach(([type, color]) => {
+            const filterItem = document.createElement('div');
+            filterItem.className = 'filter-item';
+
+            filterItem.innerHTML = `
+                <label class="toggle-label">
+                    <input type="checkbox" data-type="${type}" checked>
+                    <span class="color-indicator" style="background-color: ${color}"></span>
+                    <span class="toggle-text">${type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                </label>
+            `;
+
+            container.appendChild(filterItem);
+
+            // Add event listener
+            const checkbox = filterItem.querySelector('input');
+            checkbox.addEventListener('change', () => {
+                filterSettings.predictionTypes[type] = checkbox.checked;
+                applyFilters();
+            });
+        });
+
+        // Add event listener for locations without predictions
+        document.getElementById('showNoDetections').addEventListener('change', (e) => {
+            filterSettings.showNoDetections = e.target.checked;
+            applyFilters();
+        });
+    }
+
+    // A variable to store the data for filtering
+    let uniqueDataCache = [];
+
+    // Apply filters to map
+    function applyFilters() {
+        markers.clearLayers();
+
+        // Re-add markers based on current filter settings
+        uniqueDataCache.forEach(prediction => {
+            const [lng, lat] = prediction.geometry.coordinates;
+
+            // Skip if no prediction results and filter is off
+            if (prediction.properties.prediction_results.length === 0) {
+                if (filterSettings.showNoDetections) {
+                    const marker = L.circle([lat, lng], {
+                        color: '#ffffff',
+                        fillColor: '#ffffff',
+                        fillOpacity: 1,
+                        radius: 3
+                    });
+                    marker.bindPopup('<div style="max-width: 200px"><p style="margin: 0 0 8px">No predictions</p></div>');
+                    markers.addLayer(marker);
+                }
+                return;
+            }
+
+            // Get the highest confidence prediction
+            const highestConfidence = Math.max(...prediction.properties.prediction_results.map(p => p.confidence));
+            const result = prediction.properties.prediction_results.find(r => r.confidence === highestConfidence);
+
+            // Skip if prediction type is filtered out
+            if (!filterSettings.predictionTypes[result.label_id]) {
+                return;
+            }
+
+            // Add marker
+            const marker = L.circle([lat, lng], {
+                color: getMarkerColor(prediction.properties.prediction_results),
+                fillColor: getMarkerColor(prediction.properties.prediction_results),
+                fillOpacity: 1,
+                radius: 3
+            });
+
+            marker.bindPopup(createPopupContent(prediction));
+            markers.addLayer(marker);
+        });
+    }
+
+    function resetMapView() {
+        if (uniqueDataCache.length > 0) {
+            const group = L.featureGroup(markers.getLayers());
+            map.fitBounds(group.getBounds());
+        }
+    }
+
+    function getMarkerColor(results) {
+        if (!results || results.length === 0) return '#ffffff';
+
+        const highestConfidence = Math.max(...results.map(p => p.confidence));
         const result = results.find(r => r.confidence === highestConfidence);
 
-        // Return color from outcomeColors using the label_id
         return outcomeColors[result.label_id] || '#6c757d';
     }
 
     function createPopupContent(prediction) {
-        const highestConfidence = Math.max(...prediction.properties.prediction_results.map(p => p.confidence));
-        return `
-        <div style="max-width: 200px">
-            <p style="margin: 0 0 8px">${prediction.properties.address}</p>
-            <p style="margin: 0">Confidence: ${(highestConfidence * 100).toFixed(1)}%</p>
-            <img src="${prediction.properties.image_uri}" alt="Prediction Image" style="width: 100%; margin-top: 10px;">
-        </div>
-    `;
+        const results = prediction.properties.prediction_results;
+        const address = prediction.properties.address || 'Unknown location';
+
+        let content = `<div style="max-width: 200px">
+                        <p style="margin: 0 0 8px">${address}</p>`;
+
+        if (results && results.length > 0) {
+            content += `<table style="width: 100%; font-size: 0.9em; border-collapse: collapse;">
+                        <tr>
+                            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 4px;">Type</th>
+                            <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 4px;">Confidence</th>
+                        </tr>`;
+
+            results.forEach(result => {
+                content += `<tr>
+                            <td style="padding: 4px; border-bottom: 1px solid #eee;">${result.label_id}</td>
+                            <td style="text-align: right; padding: 4px; border-bottom: 1px solid #eee;">${(result.confidence * 100).toFixed(1)}%</td>
+                        </tr>`;
+            });
+
+            content += `</table>`;
+        } else {
+            content += `<p>No predictions for this location</p>`;
+        }
+
+        content += `</div>`;
+        return content;
+    }
+
+    function toRadians(degrees) {
+        return degrees * Math.PI / 180;
     }
 
     function calculateSegmentLength(coordinates) {
         if (!coordinates || coordinates.length < 2) return 0;
 
-        const R = 6371e3; // Earth's radius in meters
-        const toRadians = (degrees) => degrees * (Math.PI / 180);
-
+        const R = 6371; // Radius of the Earth in km
         let totalLength = 0;
 
         for (let i = 0; i < coordinates.length - 1; i++) {
@@ -341,59 +304,30 @@
             markers.clearLayers();
 
             // Filter out duplicates based on location
-            const uniqueData = [];
+            uniqueDataCache = [];
             const seenLocations = new Set();
 
             data.forEach(prediction => {
                 const locationKey = `${prediction.geometry.coordinates[0]},${prediction.geometry.coordinates[1]}`;
                 if (!seenLocations.has(locationKey)) {
                     seenLocations.add(locationKey);
-                    uniqueData.push(prediction);
+                    uniqueDataCache.push(prediction);
                 }
             });
 
             // Update statistics
-            updateDashboardStats(uniqueData);
+            updateDashboardStats(uniqueDataCache);
 
-            // Add markers to map
-            uniqueData.forEach(prediction => {
-                const [lng, lat] = prediction.geometry.coordinates;
-                const highestConfidence = Math.max(...prediction.properties.prediction_results.map(p => p.confidence));
+            // Apply filters to the map
+            applyFilters();
 
-                const marker = L.circle([lat, lng], {
-                    color: getMarkerColor(prediction.properties.prediction_results),
-                    fillColor: getMarkerColor(prediction.properties.prediction_results),
-                    fillOpacity: 1,
-                    radius: 3
-                });
-
-                marker.bindPopup(createPopupContent(prediction));
-                markers.addLayer(marker);
-            });
-
-            // Add white dot markers for images without predictions
-            data.forEach(prediction => {
-                if (prediction.properties.prediction_results.length === 0) {
-                    const [lng, lat] = prediction.geometry.coordinates;
-                    const marker = L.circle([lat, lng], {
-                        color: '#ffffff',
-                        fillColor: '#ffffff',
-                        fillOpacity: 1,
-                        radius: 3
-                    });
-
-                    marker.bindPopup('<div style="max-width: 200px"><p style="margin: 0 0 8px">No predictions</p></div>');
-                    markers.addLayer(marker);
-                }
-            });
-
-            if (uniqueData.length > 0) {
+            if (uniqueDataCache.length > 0) {
                 const group = L.featureGroup(markers.getLayers());
                 map.fitBounds(group.getBounds());
             }
 
             // Calculate and update roadway score
-            const roadSegments = uniqueData.map(prediction => ({
+            const roadSegments = uniqueDataCache.map(prediction => ({
                 features: prediction.properties.prediction_results,
                 coordinates: prediction.geometry.coordinates
             }));
@@ -460,10 +394,11 @@
             }
 
             const latestHTML = `
-        <div class="stat-item">
-            <span>Address:</span>
-            <span>${streetAddress}</span>
-        </div>`;
+            <div class="stat-item left-align">
+                <span>Address:</span>
+                <span>${streetAddress}</span>
+            </div>`;
+
 
             // Only add confidence bar if there are prediction results
             if (latest.properties.prediction_results && latest.properties.prediction_results.length > 0) {
@@ -485,8 +420,11 @@
         }
     }
 
-    // Initial fetch
-    fetchPredictionData();
+    // Initialize filters and fetch data
+    document.addEventListener('DOMContentLoaded', () => {
+        createFilterUI();
+        fetchPredictionData();
+    });
 
     // Refresh data every 5 minutes
     setInterval(fetchPredictionData, 300000);

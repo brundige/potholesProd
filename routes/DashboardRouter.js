@@ -77,6 +77,36 @@ router.post('/updateAnnotation', async (req, res) => {
   }
 });
 
+// Endpoint to submit 311 request
+router.post('/submit311', async (req, res) => {
+  try {
+    const { potholeId, live } = req.body;
+
+    if (!potholeId) {
+      return res.status(400).json({ message: 'Pothole ID is required' });
+    }
+
+    const pothole = await Pothole.findById(potholeId);
+
+    if (!pothole) {
+      return res.status(404).json({ message: 'Pothole not found' });
+    }
+
+    if (!live) {
+      console.log('311 request (simulation):', { potholeId, pothole });
+      return res.json({ message: '311 request logged (not submitted)', pothole });
+    }
+
+    // Here you would add the logic to submit the 311 request
+    // For example, using a third-party API or service
+
+    res.json({ message: '311 request submitted successfully', pothole });
+  } catch (error) {
+    console.error('Error submitting 311 request:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.post('/updatePredictionOutcome/:potholeId/:predictionId', async (req, res) => {
   try {
     const { potholeId, predictionId } = req.params;
@@ -157,7 +187,6 @@ router.get('/potholes/csv', async (req, res) => {
   }
 });
 
-
 router.get('/potholes/:id', async (req, res) => {
   try {
     const pothole = await Pothole.findById(req.params.id);
@@ -170,10 +199,6 @@ router.get('/potholes/:id', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-
-
-// Your existing routes...
 
 
 router.get('/potholes/street/:streetName', async (req, res) => {

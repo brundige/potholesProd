@@ -25,6 +25,7 @@ const port = 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/test';
 //const MONGO_URI = 'mongodb://10.21.6.131:27017'
 
+app.use('/css', express.static(path.join(__dirname, 'public/css')));
 
 // Set view engine
 app.set('views', path.join(__dirname, 'views'));
