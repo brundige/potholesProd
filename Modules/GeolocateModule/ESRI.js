@@ -69,7 +69,7 @@ class EsriGeolocator {
                 throw new Error(`Error during reverse geocoding: ${data.error.message}`);
             }
 
-            return data.address || "Unknown";
+            return data.Address || "Unknown";
         } catch (error) {
             console.error("Error during reverse geocoding:", error);
             return "Unknown";
